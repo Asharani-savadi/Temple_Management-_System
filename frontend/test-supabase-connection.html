@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #dc143c;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #dc143c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #b01030;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #dc143c;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left-color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Supabase Connection Test</h1>
+        <p>This tool will help you verify your Supabase setup.</p>
+        
+        <div>
+            <button onclick="testConnection()">1. Test Connection</button>
+            <button onclick="checkTables()">2. Check Tables</button>
+            <button onclick="checkAdminUser()">3. Check Admin User</button>
+            <button onclick="createAdminUser()">4. Create Admin User</button>
+            <button onclick="testLogin()">5. Test Login</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Your Supabase credentials
+        const SUPABASE_URL = 'https://xuzdxeudtianvhtczlwj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1emR4ZXVkdGlhbnZodGN6bHdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTU5NzcsImV4cCI6MjA1NTI5MTk3N30.sb_publishable_J_steUeEpPy9zS8kbnSJ2w_McC_Tq8p';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+
+        async function testConnection() {
+            showResult('Testing connection...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('rooms')
+                    .select('count');
+                
+                if (error) {
+                    showResult(`❌ Connection Error:\n${error.message}\n\nThis usually means:\n1. The SQL schema hasn't been run yet\n2. The tables don't exist\n\nPlease run supabase-schema.sql in Supabase SQL Editor`, 'error');
+                } else {
+                    showResult('✅ Connection successful!\nSupabase is working correctly.', 'success');
+                }
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function checkTables() {
+            showResult('Checking tables...', 'info');
+            try {
+                const tables = ['rooms', 'room_types', 'marriage_halls', 'bookings', 'donations', 'gallery_images', 'site_content', 'admin_users'];
+                let results = '📊 Table Check Results:\n\n';
+                
+                for (const table of tables) {
+                    const { data, error } = await supabase.from(table).select('count');
+                    if (error) {
+                        results += `❌ ${table}: NOT FOUND\n`;
+                    } else {
+                        results += `✅ ${table}: EXISTS\n`;
+                    }
+                }
+                
+                results += '\nIf any tables are missing, run supabase-schema.sql in Supabase SQL Editor';
+                showResult(results, 'info');
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function checkAdminUser() {
+            showResult('Checking admin user...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('admin_users')
+                    .select('*');
+                
+                if (error) {
+                    showResult(`❌ Error checking admin_users table:\n${error.message}\n\nThe admin_users table might not exist.\nPlease run supabase-schema.sql in Supabase SQL Editor`, 'error');
+                } else if (!data || data.length === 0) {
+                    showResult('⚠️ No admin users found!\n\nClick "4. Create Admin User" to create one.', 'error');
+                } else {
+                    let result = '✅ Admin users found:\n\n';
+                    data.forEach(user => {
+                        result += `Username: ${user.username}\n`;
+                        result += `Password: ${user.password_hash}\n`;
+                        result += `Email: ${user.email}\n`;
+                        result += `Created: ${user.created_at}\n\n`;
+                    });
+                    showResult(result, 'success');
+                }
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function createAdminUser() {
+            showResult('Creating admin user...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('admin_users')
+                    .insert([
+                        { username: 'admin', password_hash: 'admin123', email: 'admin@example.org' }
+                    ])
+                    .select();
+                
+                if (error) {
+                    if (error.message.includes('duplicate')) {
+                        showResult('⚠️ Admin user already exists!\n\nUsername: admin\nPassword: admin123', 'info');
+                    } else {
+                        showResult(`❌ Error creating admin user:\n${error.message}`, 'error');
+                    }
+                } else {
+                    showResult('✅ Admin user created successfully!\n\nUsername: admin\nPassword: admin123\n\nYou can now login to the admin panel.', 'success');
+                }
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            showResult('Testing login with admin/admin123...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('admin_users')
+                    .select('*')
+                    .eq('username', 'admin')
+                    .eq('password_hash', 'admin123')
+                    .single();
+                
+                if (error) {
+                    showResult(`❌ Login test failed:\n${error.message}\n\nPossible reasons:\n1. Admin user doesn't exist (click "4. Create Admin User")\n2. Wrong credentials\n3. Table doesn't exist (run supabase-schema.sql)`, 'error');
+                } else if (!data) {
+                    showResult('❌ Login failed: No matching user found\n\nClick "4. Create Admin User" to create the admin account.', 'error');
+                } else {
+                    showResult(`✅ Login test successful!\n\nUser found:\nUsername: ${data.username}\nEmail: ${data.email}\n\nYou should now be able to login to the admin panel!`, 'success');
+                }
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        // Auto-run connection test on load
+        window.onload = () => {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

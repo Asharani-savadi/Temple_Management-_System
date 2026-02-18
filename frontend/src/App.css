@@ -1,0 +1,187 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+
+.section {
+  padding: 60px 0;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  color: #dc143c;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #d2691e 0%, #b8541a 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #8b6f47 0%, #6d5635 100%);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+}
+
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+  .section {
+    padding: 40px 0;
+  }
+
+  .section-title {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+
+  .btn {
+    padding: 10px 25px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 30px 0;
+  }
+
+  .section-title {
+    font-size: 1.6rem;
+    margin-bottom: 25px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button,
+  a.btn,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 48px;
+    padding: 12px 24px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  /* Better spacing for touch */
+  .service-btn,
+  .project-btn,
+  .audio-btn {
+    min-height: 120px;
+  }
+}
+
+
+/* Utility classes for responsive design */
+.text-center {
+  text-align: center;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+/* Ensure images are responsive */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better line height for readability on mobile */
+@media (max-width: 768px) {
+  body {
+    line-height: 1.7;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3;
+  }
+}
+
+/* Prevent text overflow */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
