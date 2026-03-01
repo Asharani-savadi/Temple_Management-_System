@@ -483,6 +483,122 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
+// ============================================
+// AUDIO TRACKS ENDPOINTS
+// ============================================
+
+// Get all audio tracks with optional filtering
+app.get('/api/audio-tracks', async (req, res) => {
+  try {
+    const { category, popular } = req.query;
+    let query = 'SELECT * FROM audio_tracks WHERE 1=1';
+    const params = [];
+    
+    if (category) {
+      query += ' AND category = ?';
+      params.push(category);
+    }
+    
+    if (popular === 'true') {
+      query += ' AND is_popular = TRUE';
+    }
+    
+    query += ' ORDER BY is_featured DESC, play_count DESC, title ASC';
+    
+    const [rows] = await pool.query(query, params);
+    
+    // Transform data for frontend
+    const tracks = rows.map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      category: track.category,
+      audioUrl: track.filename ? `/audio/${track.category}/${track.filename}` : track.external_url,
+      duration: track.duration,
+      isPopular: track.is_popular,
+      isFeatured: track.is_featured,
+      playCount: track.play_count,
+      attribution: track.attribution
+    }));
+    
+    res.json({ success: true, data: tracks });
+  } catch (error) {
+    console.error('Error fetching audio tracks:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Increment play count for a track
+app.put('/api/audio-tracks/:id/play', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await pool.query('UPDATE audio_tracks SET play_count = play_count + 1 WHERE id = ?', [id]);
+    
+    const [rows] = await pool.query('SELECT play_count FROM audio_tracks WHERE id = ?', [id]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Track not found' });
+    }
+    
+    res.json({ success: true, playCount: rows[0].play_count });
+  } catch (error) {
+    console.error('Error incrementing play count:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create new audio track (admin only)
+app.post('/api/audio-tracks', async (req, res) => {
+  try {
+    const track = req.body;
+    const [result] = await pool.query('INSERT INTO audio_tracks SET ?', [track]);
+    
+    const [rows] = await pool.query('SELECT * FROM audio_tracks WHERE id = ?', [result.insertId]);
+    res.status(201).json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error creating audio track:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update audio track metadata (admin only)
+app.put('/api/audio-tracks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const [result] = await pool.query('UPDATE audio_tracks SET ? WHERE id = ?', [updates, id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Track not found' });
+    }
+    
+    const [rows] = await pool.query('SELECT * FROM audio_tracks WHERE id = ?', [id]);
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error updating audio track:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete audio track (admin only)
+app.delete('/api/audio-tracks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query('DELETE FROM audio_tracks WHERE id = ?', [id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Track not found' });
+    }
+    
+    res.json({ success: true, message: 'Track deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting audio track:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

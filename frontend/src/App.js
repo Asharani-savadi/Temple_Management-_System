@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { DataProvider } from './context/DataContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import MiniPlayer from './components/MiniPlayer';
 import Home from './pages/Home';
 import About from './pages/About';
 import Services from './pages/Services';
@@ -67,6 +68,7 @@ function App() {
                 </Routes>
               </main>
               <Footer />
+              <MiniPlayer />
             </>
           } />
         </Routes>

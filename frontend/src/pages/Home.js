@@ -7,6 +7,7 @@ import { MdRestaurant } from 'react-icons/md';
 import { GiCow, GiMusicalNotes } from 'react-icons/gi';
 import { IoLibrary } from 'react-icons/io5';
 import { BiMusic } from 'react-icons/bi';
+import AudioPlayer from '../components/AudioPlayer';
 
 function Home() {
   const navigate = useNavigate();
@@ -397,41 +398,7 @@ function Home() {
         <div className="audio-modal-overlay" onClick={() => setSelectedAudio(null)}>
           <div className="audio-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelectedAudio(null)}>×</button>
-            <div className="modal-header">
-              <div className="modal-icon">
-                {React.createElement(audioData[selectedAudio].icon)}
-              </div>
-              <h2>{audioData[selectedAudio].title}</h2>
-            </div>
-            <div className="modal-body">
-              <p className="modal-description">{audioData[selectedAudio].description}</p>
-              
-              <div className="modal-stats">
-                {Object.entries(audioData[selectedAudio].stats).map(([key, value]) => (
-                  <div key={key} className="modal-stat">
-                    <div className="modal-stat-value">{value}</div>
-                    <div className="modal-stat-label">{key.charAt(0).toUpperCase() + key.slice(1)}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="modal-tracks">
-                <h3>Popular Tracks</h3>
-                <div className="tracks-list">
-                  {audioData[selectedAudio].tracks.map((track, index) => (
-                    <div key={index} className="track-item">
-                      <span className="track-number">{index + 1}</span>
-                      <span className="track-name">{track}</span>
-                      <button className="track-play-btn">▶</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button className="modal-view-all-btn">
-                <BiMusic /> View All Tracks
-              </button>
-            </div>
+            <AudioPlayer category={selectedAudio} onClose={() => setSelectedAudio(null)} />
           </div>
         </div>
       )}

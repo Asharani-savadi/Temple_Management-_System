@@ -120,8 +120,16 @@ function Contact() {
         <div className="container">
           <h2 className="section-title">Find Us</h2>
           <div className="map-placeholder">
-            <p>Map Location Placeholder</p>
-            <p>Integrate Google Maps or other map service here</p>
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d30569.26295315397!2d75.068193!3d16.718973!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc729f35cda6e67%3A0x895e51d030f29895!2sK.L.E.%20Society%E2%80%99s%20Shri%20Shivayogi%20Murughendra%20Swamiji%20BCA%20College%2C%20Athani!5e0!3m2!1sen!2sin!4v1772349857967!5m2!1sen!2sin" 
+              width="600" 
+              height="450" 
+              style={{ border: 0 }} 
+              allowFullScreen="" 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Location Map"
+            ></iframe>
           </div>
         </div>
       </section>

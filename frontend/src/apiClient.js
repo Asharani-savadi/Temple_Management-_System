@@ -196,6 +196,39 @@ class ApiClient {
       body: JSON.stringify({ username, password }),
     });
   }
+
+  // Audio Tracks
+  async getAudioTracks(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `/audio-tracks?${queryString}` : '/audio-tracks';
+    return this.request(endpoint);
+  }
+
+  async incrementPlayCount(trackId) {
+    return this.request(`/audio-tracks/${trackId}/play`, {
+      method: 'PUT',
+    });
+  }
+
+  async createAudioTrack(track) {
+    return this.request('/audio-tracks', {
+      method: 'POST',
+      body: JSON.stringify(track),
+    });
+  }
+
+  async updateAudioTrack(id, updates) {
+    return this.request(`/audio-tracks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteAudioTrack(id) {
+    return this.request(`/audio-tracks/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
