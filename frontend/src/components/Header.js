@@ -29,6 +29,7 @@ function Header() {
             <Link to="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <Link to="/about" onClick={() => setMobileMenuOpen(false)}>About</Link>
             <Link to="/booking" onClick={() => setMobileMenuOpen(false)}>Booking</Link>
+            <Link to="/online-booking-services" onClick={() => setMobileMenuOpen(false)}>Services</Link>
             <Link to="/gallery" onClick={() => setMobileMenuOpen(false)}>Gallery</Link>
             <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
             <Link to="/admin/login" className="admin-login-btn" onClick={() => setMobileMenuOpen(false)}>

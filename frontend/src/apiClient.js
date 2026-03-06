@@ -229,6 +229,61 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Darshan Bookings
+  async getDarshanTypes() {
+    return this.request('/darshan-types');
+  }
+
+  async getDarshanSlots(date, type) {
+    return this.request(`/darshan-slots?date=${date}&type=${type}`);
+  }
+
+  async createDarshanBooking(bookingData) {
+    return this.request('/darshan-bookings', {
+      method: 'POST',
+      body: JSON.stringify(bookingData),
+    });
+  }
+
+  async getDarshanBooking(reference) {
+    return this.request(`/darshan-bookings/${reference}`);
+  }
+
+  async getDarshanBookingsByPhone(phone) {
+    return this.request(`/darshan-bookings-by-phone/${phone}`);
+  }
+
+  async updateDarshanBooking(id, updates) {
+    return this.request(`/darshan-bookings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async cancelDarshanBooking(id) {
+    return this.request(`/darshan-bookings/${id}/cancel`, {
+      method: 'PUT',
+    });
+  }
+
+  // Admin Darshan Endpoints
+  async getAdminDarshanBookings(filters = {}) {
+    const queryString = new URLSearchParams(filters).toString();
+    const endpoint = queryString ? `/admin/darshan-bookings?${queryString}` : '/admin/darshan-bookings';
+    return this.request(endpoint);
+  }
+
+  async checkInDarshanBooking(id) {
+    return this.request(`/admin/darshan-bookings/${id}/checkin`, {
+      method: 'PUT',
+    });
+  }
+
+  async getDarshanStats(date = null) {
+    const endpoint = date ? `/admin/darshan-stats?date=${date}` : '/admin/darshan-stats';
+    return this.request(endpoint);
+  }
 }
 
 export const apiClient = new ApiClient();

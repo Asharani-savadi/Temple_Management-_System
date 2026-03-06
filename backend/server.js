@@ -1,10 +1,25 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
+
+// Email transporter configuration with explicit SMTP settings
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // Use TLS, not SSL
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASSWORD || 'your-app-password'
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -596,6 +611,496 @@ app.delete('/api/audio-tracks/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting audio track:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// DARSHAN BOOKING ENDPOINTS
+// ============================================
+
+// Get all darshan types
+app.get('/api/darshan-types', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM darshan_types WHERE is_active = TRUE ORDER BY id'
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching darshan types:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get available time slots for a specific date and darshan type
+app.get('/api/darshan-slots', async (req, res) => {
+  try {
+    const { date, type } = req.query;
+    
+    if (!date || !type) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Date and type parameters are required' 
+      });
+    }
+    
+    // Get darshan type details
+    const [typeRows] = await pool.query(
+      'SELECT * FROM darshan_types WHERE type_code = ? AND is_active = TRUE',
+      [type]
+    );
+    
+    if (typeRows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Darshan type not found' 
+      });
+    }
+    
+    const darshanType = typeRows[0];
+    
+    // Get all time slots
+    const [slots] = await pool.query(
+      'SELECT * FROM darshan_time_slots WHERE is_active = TRUE ORDER BY slot_order'
+    );
+    
+    // Get booked count for each slot on the given date
+    const [bookings] = await pool.query(
+      `SELECT time_slot, COUNT(*) as booked_count 
+       FROM darshan_bookings 
+       WHERE booking_date = ? AND darshan_type = ? AND booking_status != 'cancelled'
+       GROUP BY time_slot`,
+      [date, type]
+    );
+    
+    const bookedMap = {};
+    bookings.forEach(b => {
+      bookedMap[b.time_slot] = b.booked_count;
+    });
+    
+    // Build slot availability
+    const availableSlots = slots.map(slot => {
+      const booked = bookedMap[slot.slot_time] || 0;
+      const available = darshanType.max_persons_per_slot - booked;
+      
+      return {
+        id: slot.id,
+        time: slot.slot_time,
+        capacity: darshanType.max_persons_per_slot,
+        booked: booked,
+        available: Math.max(0, available),
+        isFull: available <= 0,
+        price: darshanType.price_per_person
+      };
+    });
+    
+    res.json({ 
+      success: true, 
+      data: {
+        date,
+        type,
+        darshanType: darshanType.type_name,
+        slots: availableSlots
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching darshan slots:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create a new darshan booking
+app.post('/api/darshan-bookings', async (req, res) => {
+  try {
+    const {
+      devotee_name,
+      devotee_phone,
+      devotee_email,
+      devotee_address,
+      darshan_type,
+      booking_date,
+      time_slot,
+      number_of_persons,
+      special_requests,
+      payment_method
+    } = req.body;
+    
+    // Validation
+    if (!devotee_name || !devotee_phone || !darshan_type || !booking_date || !time_slot || !number_of_persons) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      });
+    }
+    
+    if (number_of_persons < 1 || number_of_persons > 10) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Number of persons must be between 1 and 10' 
+      });
+    }
+    
+    // Get darshan type pricing
+    const [typeRows] = await pool.query(
+      'SELECT * FROM darshan_types WHERE type_code = ?',
+      [darshan_type]
+    );
+    
+    if (typeRows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Darshan type not found' 
+      });
+    }
+    
+    const darshanTypeData = typeRows[0];
+    const amount_per_person = darshanTypeData.price_per_person;
+    const total_amount = amount_per_person * number_of_persons;
+    
+    // Generate unique booking ID
+    const booking_id = `DB${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const confirmation_code = `CONF${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+    
+    // Determine payment status
+    const payment_status = total_amount === 0 ? 'paid' : 'pending';
+    const booking_status = total_amount === 0 ? 'confirmed' : 'pending';
+    
+    // Insert booking
+    const [result] = await pool.query(
+      `INSERT INTO darshan_bookings (
+        booking_id, devotee_name, devotee_phone, devotee_email, devotee_address,
+        darshan_type, booking_date, time_slot, number_of_persons,
+        amount_per_person, total_amount, payment_status, booking_status,
+        confirmation_code, special_requests, payment_method, booking_confirmed_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        booking_id, devotee_name, devotee_phone, devotee_email, devotee_address,
+        darshan_type, booking_date, time_slot, number_of_persons,
+        amount_per_person, total_amount, payment_status, booking_status,
+        confirmation_code, special_requests, payment_method
+      ]
+    );
+    
+    // Fetch the created booking
+    const [bookings] = await pool.query(
+      'SELECT * FROM darshan_bookings WHERE id = ?',
+      [result.insertId]
+    );
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Booking created successfully',
+      data: bookings[0]
+    });
+  } catch (error) {
+    console.error('Error creating darshan booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get booking details by reference
+app.get('/api/darshan-bookings/:reference', async (req, res) => {
+  try {
+    const { reference } = req.params;
+    
+    const [rows] = await pool.query(
+      'SELECT * FROM darshan_bookings WHERE booking_id = ? OR confirmation_code = ?',
+      [reference, reference]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Booking not found' 
+      });
+    }
+    
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error fetching booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get all bookings for a phone number
+app.get('/api/darshan-bookings-by-phone/:phone', async (req, res) => {
+  try {
+    const { phone } = req.params;
+    
+    const [rows] = await pool.query(
+      'SELECT * FROM darshan_bookings WHERE devotee_phone = ? ORDER BY booking_date DESC',
+      [phone]
+    );
+    
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update booking status
+app.put('/api/darshan-bookings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const [result] = await pool.query(
+      'UPDATE darshan_bookings SET ? WHERE id = ?',
+      [updates, id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Booking not found' 
+      });
+    }
+    
+    const [rows] = await pool.query(
+      'SELECT * FROM darshan_bookings WHERE id = ?',
+      [id]
+    );
+    
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error updating booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Cancel booking
+app.put('/api/darshan-bookings/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const [result] = await pool.query(
+      'UPDATE darshan_bookings SET booking_status = ?, payment_status = ? WHERE id = ?',
+      ['cancelled', 'refunded', id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Booking not found' 
+      });
+    }
+    
+    const [rows] = await pool.query(
+      'SELECT * FROM darshan_bookings WHERE id = ?',
+      [id]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Booking cancelled successfully',
+      data: rows[0]
+    });
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Admin: Get all bookings with filters
+app.get('/api/admin/darshan-bookings', async (req, res) => {
+  try {
+    const { date, status, type } = req.query;
+    let query = 'SELECT * FROM darshan_bookings WHERE 1=1';
+    const params = [];
+    
+    if (date) {
+      query += ' AND booking_date = ?';
+      params.push(date);
+    }
+    
+    if (status) {
+      query += ' AND booking_status = ?';
+      params.push(status);
+    }
+    
+    if (type) {
+      query += ' AND darshan_type = ?';
+      params.push(type);
+    }
+    
+    query += ' ORDER BY booking_date DESC, time_slot ASC';
+    
+    const [rows] = await pool.query(query, params);
+    
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching admin bookings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Admin: Check-in booking
+app.put('/api/admin/darshan-bookings/:id/checkin', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const [result] = await pool.query(
+      'UPDATE darshan_bookings SET booking_status = ?, checked_in_at = NOW() WHERE id = ?',
+      ['completed', id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Booking not found' 
+      });
+    }
+    
+    const [rows] = await pool.query(
+      'SELECT * FROM darshan_bookings WHERE id = ?',
+      [id]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Check-in successful',
+      data: rows[0]
+    });
+  } catch (error) {
+    console.error('Error checking in booking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Admin: Get darshan statistics
+app.get('/api/admin/darshan-stats', async (req, res) => {
+  try {
+    const { date } = req.query;
+    
+    let dateFilter = '';
+    const params = [];
+    
+    if (date) {
+      dateFilter = ' WHERE booking_date = ?';
+      params.push(date);
+    }
+    
+    // Total bookings
+    const [totalBookings] = await pool.query(
+      `SELECT COUNT(*) as count FROM darshan_bookings${dateFilter}`,
+      params
+    );
+    
+    // Bookings by type
+    const [byType] = await pool.query(
+      `SELECT darshan_type, COUNT(*) as count, SUM(number_of_persons) as persons 
+       FROM darshan_bookings${dateFilter}
+       GROUP BY darshan_type`,
+      params
+    );
+    
+    // Bookings by status
+    const [byStatus] = await pool.query(
+      `SELECT booking_status, COUNT(*) as count 
+       FROM darshan_bookings${dateFilter}
+       GROUP BY booking_status`,
+      params
+    );
+    
+    // Revenue
+    const [revenue] = await pool.query(
+      `SELECT SUM(total_amount) as total FROM darshan_bookings 
+       WHERE payment_status = 'paid'${dateFilter ? ' AND booking_date = ?' : ''}`,
+      params
+    );
+    
+    res.json({ 
+      success: true, 
+      data: {
+        totalBookings: totalBookings[0].count,
+        byType,
+        byStatus,
+        revenue: revenue[0].total || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching darshan stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// CONTACT FORM ENDPOINT
+// ============================================
+
+// Send contact form email
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, phone, subject, message } = req.body;
+
+    // Validation
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: name, email, subject, message'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email address'
+      });
+    }
+
+    // Prepare email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      to: process.env.CONTACT_EMAIL || 'admin@temple.com',
+      subject: `New Contact Form Submission: ${subject}`,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+        <hr>
+        <p><small>This is an automated email from the temple website contact form.</small></p>
+      `
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+
+    // Send confirmation email to user
+    const confirmationEmail = {
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      to: email,
+      subject: 'We received your message - Temple Management',
+      html: `
+        <h2>Thank You for Contacting Us</h2>
+        <p>Dear ${name},</p>
+        <p>We have received your message and will get back to you as soon as possible.</p>
+        <p><strong>Your Message Details:</strong></p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+        <hr>
+        <p>Best regards,<br>Temple Management Team</p>
+      `
+    };
+
+    await transporter.sendMail(confirmationEmail);
+
+    res.json({
+      success: true,
+      message: 'Your message has been sent successfully. We will contact you soon.'
+    });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send message. Please try again later.'
+    });
   }
 });
 

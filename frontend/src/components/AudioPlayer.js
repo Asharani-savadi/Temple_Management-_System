@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAudio } from '../context/AudioContext';
-import { apiClient } from '../apiClient';
+import { loadLocalAudioTracks } from '../utils/LocalAudioLoader';
 import './AudioPlayer.css';
-import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaMusic } from 'react-icons/fa';
+import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaMusic, FaArrowLeft, FaTimes } from 'react-icons/fa';
 
 const AudioPlayer = ({ category, onClose }) => {
   const [tracks, setTracks] = useState([]);
@@ -33,20 +33,23 @@ const AudioPlayer = ({ category, onClose }) => {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiClient.getAudioTracks({ category });
+        const result = await loadLocalAudioTracks(category);
         
         if (isMounted) {
-          if (response.success && response.data) {
-            setTracks(response.data);
-            loadPlaylist(response.data);
+          if (result.success && result.data) {
+            setTracks(result.data);
+            loadPlaylist(result.data);
+          } else if (result.data && result.data.length === 0) {
+            setTracks([]);
+            setError('No tracks available for this category');
           } else {
-            setError('No tracks found');
+            setError(result.error || 'Failed to load tracks');
           }
         }
       } catch (err) {
-        console.error('Error fetching tracks:', err);
+        console.error('Error loading tracks:', err);
         if (isMounted) {
-          setError('Failed to load tracks. Please try again.');
+          setError('Failed to load tracks');
         }
       } finally {
         if (isMounted) {
@@ -128,11 +131,28 @@ const AudioPlayer = ({ category, onClose }) => {
     <div className="audio-player">
       {/* Header */}
       <div className="audio-player-header">
-        <h2>{categoryTitle}</h2>
-        <p className="track-count">{tracks.length} tracks available</p>
-        <p className="audio-note">
-          ⚠️ Note: Audio files are streamed from Archive.org. If playback fails, the file may be temporarily unavailable.
-        </p>
+        <div className="header-top">
+          <button 
+            className="back-btn"
+            onClick={onClose}
+            aria-label="Go back"
+            title="Go back"
+          >
+            <FaArrowLeft />
+          </button>
+          <div className="header-title">
+            <h2>{categoryTitle}</h2>
+            <p className="track-count">{tracks.length} tracks available</p>
+          </div>
+          <button 
+            className="close-btn"
+            onClick={onClose}
+            aria-label="Close player"
+            title="Close"
+          >
+            <FaTimes />
+          </button>
+        </div>
       </div>
 
       {/* Track List */}

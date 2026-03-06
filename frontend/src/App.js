@@ -26,6 +26,8 @@ import ManageContent from './pages/admin/ManageContent';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageTemples from './pages/admin/ManageTemples';
 import Settings from './pages/admin/Settings';
+import DarshanBooking from './pages/DarshanBooking';
+import OnlineBookingServices from './pages/OnlineBookingServices';
 import './App.css';
 
 function App() {
@@ -65,6 +67,8 @@ function App() {
                   <Route path="/rooms-donor" element={<RoomsDonor />} />
                   <Route path="/my-history" element={<MyHistory />} />
                   <Route path="/panchanga" element={<Panchanga />} />
+                  <Route path="/darshan-booking" element={<DarshanBooking />} />
+                  <Route path="/online-booking-services" element={<OnlineBookingServices />} />
                 </Routes>
               </main>
               <Footer />
