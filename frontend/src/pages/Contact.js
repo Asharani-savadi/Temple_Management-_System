@@ -11,6 +11,9 @@ function Contact() {
     message: ''
   });
 
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,10 +21,49 @@ function Contact() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Thank you for contacting us! We will get back to you soon.');
-    console.log('Contact form data:', formData);
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const response = await fetch('http://localhost:3001/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({
+          type: 'success',
+          text: data.message || 'Thank you for contacting us! We will get back to you soon.'
+        });
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.error || 'Failed to send message. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setMessage({
+        type: 'error',
+        text: 'Failed to send message. Please check your connection and try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,6 +101,11 @@ function Contact() {
 
             <div className="contact-form-container">
               <h2>Send Us a Message</h2>
+              {message.text && (
+                <div className={`message-alert ${message.type}`}>
+                  {message.text}
+                </div>
+              )}
               <form className="contact-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label>Name *</label>
@@ -68,6 +115,7 @@ function Contact() {
                     value={formData.name}
                     onChange={handleChange}
                     required 
+                    disabled={loading}
                   />
                 </div>
                 <div className="form-group">
@@ -78,6 +126,7 @@ function Contact() {
                     value={formData.email}
                     onChange={handleChange}
                     required 
+                    disabled={loading}
                   />
                 </div>
                 <div className="form-group">
@@ -87,6 +136,7 @@ function Contact() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="form-group">
@@ -97,6 +147,7 @@ function Contact() {
                     value={formData.subject}
                     onChange={handleChange}
                     required 
+                    disabled={loading}
                   />
                 </div>
                 <div className="form-group">
@@ -107,9 +158,12 @@ function Contact() {
                     onChange={handleChange}
                     rows="5"
                     required
+                    disabled={loading}
                   ></textarea>
                 </div>
-                <button type="submit" className="btn">Send Message</button>
+                <button type="submit" className="btn" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Message'}
+                </button>
               </form>
             </div>
           </div>

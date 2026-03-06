@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FaHome, FaDonate, FaChurch, FaBuilding, FaMapMarkerAlt, FaCheckCircle } from 'react-icons/fa';
 import Receipt from '../components/Receipt';
 import './Booking.css';
@@ -8,6 +8,7 @@ import './Booking.css';
 function Booking() {
   const { rooms, marriageHalls, addBooking, loading } = useData();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [bookingType, setBookingType] = useState('rooms');
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -159,8 +160,12 @@ function Booking() {
   };
 
   const handleServiceSelect = (service) => {
-    setBookingType(service);
-    setBookingStep('calendar');
+    if (service === 'darshan') {
+      navigate('/darshan-booking');
+    } else {
+      setBookingType(service);
+      setBookingStep('calendar');
+    }
   };
 
   const handleBackToCalendar = () => {
@@ -213,6 +218,13 @@ function Booking() {
               >
                 <div className="service-icon"><FaChurch /></div>
                 <h3>MARRIAGE HALL</h3>
+              </div>
+              <div 
+                className="service-selection-card"
+                onClick={() => handleServiceSelect('darshan')}
+              >
+                <div className="service-icon"><FaChurch /></div>
+                <h3>DARSHAN BOOKING</h3>
               </div>
               <a 
                 href="/rooms-donor"

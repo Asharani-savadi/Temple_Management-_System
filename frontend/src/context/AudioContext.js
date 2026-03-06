@@ -26,7 +26,10 @@ export const AudioProvider = ({ children }) => {
     const audio = audioRef.current;
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleDurationChange = () => setDuration(audio.duration);
+    const handleDurationChange = () => {
+      setDuration(audio.duration);
+      console.log('Duration loaded:', audio.duration, 'for track:', currentTrack?.title);
+    };
     const handleEnded = () => {
       setIsPlaying(false);
       playNextTrack();
@@ -87,28 +90,45 @@ export const AudioProvider = ({ children }) => {
 
       // Load new track
       setIsLoading(true);
-      audio.src = track.audioUrl;
       setCurrentTrack(track);
       setCurrentTime(0);
       
-      // Add error handler for this specific track
-      const handleError = () => {
-        console.error('Failed to load audio:', track.title, track.audioUrl);
+      // Add error handler BEFORE setting src
+      const handleError = (e) => {
+        console.error('Failed to load audio:', {
+          title: track.title,
+          audioUrl: track.audioUrl,
+          error: e,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
         setIsPlaying(false);
         setIsLoading(false);
-        alert(`Unable to play "${track.title}". The audio file may not be available or there may be a network issue. Please try another track.`);
+        alert(`Unable to play "${track.title}". The audio file may not be available at ${track.audioUrl}. Please try another track.`);
       };
       
+      // Remove any previous error handlers
+      audio.removeEventListener('error', handleError);
       audio.addEventListener('error', handleError, { once: true });
       
-      await audio.play();
-      setIsLoading(false);
+      // Now set the source
+      audio.src = track.audioUrl;
       
-      // Increment play count
+      // Try to play
       try {
-        await apiClient.incrementPlayCount(track.id);
-      } catch (error) {
-        console.error('Error incrementing play count:', error);
+        await audio.play();
+        setIsLoading(false);
+        
+        // Increment play count
+        try {
+          await apiClient.incrementPlayCount(track.id);
+        } catch (error) {
+          console.error('Error incrementing play count:', error);
+        }
+      } catch (playError) {
+        console.error('Error playing audio:', playError);
+        setIsPlaying(false);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error playing track:', error);

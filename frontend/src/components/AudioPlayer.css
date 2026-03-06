@@ -77,8 +77,19 @@
   padding: 25px 30px;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: center;
   flex-shrink: 0;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.header-title {
+  flex: 1;
+  text-align: center;
 }
 
 .audio-player-header h2 {
@@ -93,6 +104,33 @@
   margin: 0;
   font-size: 0.9rem;
   opacity: 0.8;
+}
+
+.back-btn,
+.close-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.back-btn:hover,
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.close-btn:hover {
+  background: rgba(255, 100, 100, 0.4);
 }
 
 .audio-note {
@@ -444,6 +482,13 @@
 
   .audio-player-header h2 {
     font-size: 1.5rem;
+  }
+
+  .back-btn,
+  .close-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
   }
 
   .track-list {

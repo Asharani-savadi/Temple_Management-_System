@@ -1,0 +1,342 @@
+.online-booking-services-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 40px 20px;
+}
+
+.services-header {
+  text-align: center;
+  margin-bottom: 50px;
+  animation: slideDown 0.6s ease-out;
+}
+
+.services-header h1 {
+  font-size: 3rem;
+  color: #c41e3a;
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.services-header p {
+  font-size: 1.2rem;
+  color: #666;
+  margin: 0;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto 50px;
+  padding: 0 20px;
+}
+
+.service-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  border-radius: 20px;
+  padding: 40px 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease-out;
+  border: 3px solid transparent;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: left 0.3s ease;
+  z-index: 0;
+}
+
+.service-card:hover::before {
+  left: 100%;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.service-card.highlighted {
+  background: linear-gradient(135deg, #d97a5c 0%, #c97a5c 100%);
+  border-color: #d97a5c;
+}
+
+.service-card.highlighted h2,
+.service-card.highlighted p {
+  color: white;
+}
+
+.service-card.other-service {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+}
+
+.service-card.other-service.highlighted {
+  background: linear-gradient(135deg, #d97a5c 0%, #c97a5c 100%);
+}
+
+.service-icon {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  display: inline-block;
+  animation: bounce 2s infinite;
+  color: #d97a5c;
+}
+
+.service-card.highlighted .service-icon {
+  color: white;
+}
+
+.service-card h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin: 15px 0;
+  font-weight: bold;
+  position: relative;
+  z-index: 1;
+}
+
+.service-card.highlighted h2 {
+  color: white;
+}
+
+.service-card p {
+  font-size: 1rem;
+  color: #666;
+  margin: 15px 0 25px;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+
+.service-card.highlighted p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.service-btn {
+  background: #d97a5c;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.service-card.highlighted .service-btn {
+  background: white;
+  color: #d97a5c;
+}
+
+.service-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.service-btn:active {
+  transform: scale(0.98);
+}
+
+.other-services-section {
+  margin-bottom: 50px;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #c41e3a;
+  margin-bottom: 40px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.6s ease-out;
+}
+
+.services-info {
+  background: white;
+  border-radius: 15px;
+  padding: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.8s ease-out;
+}
+
+.services-info h3 {
+  font-size: 1.8rem;
+  color: #c41e3a;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.services-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.services-info li {
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.6;
+}
+
+.services-info li:last-child {
+  border-bottom: none;
+}
+
+.services-info strong {
+  color: #d97a5c;
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .services-header h1 {
+    font-size: 2rem;
+  }
+
+  .services-header p {
+    font-size: 1rem;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 10px;
+  }
+
+  .service-card {
+    padding: 30px 20px;
+  }
+
+  .service-icon {
+    font-size: 3rem;
+  }
+
+  .service-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .services-info {
+    padding: 25px;
+  }
+
+  .services-info h3 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .online-booking-services-container {
+    padding: 20px 10px;
+  }
+
+  .services-header {
+    margin-bottom: 30px;
+  }
+
+  .services-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .services-header p {
+    font-size: 0.9rem;
+  }
+
+  .service-card {
+    padding: 25px 15px;
+    border-radius: 15px;
+  }
+
+  .service-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+  }
+
+  .service-card h2 {
+    font-size: 1.3rem;
+    margin: 10px 0;
+  }
+
+  .service-card p {
+    font-size: 0.9rem;
+    margin: 10px 0 15px;
+  }
+
+  .service-btn {
+    padding: 10px 25px;
+    font-size: 0.9rem;
+  }
+
+  .services-info {
+    padding: 20px;
+  }
+
+  .services-info h3 {
+    font-size: 1.3rem;
+  }
+
+  .services-info li {
+    padding: 12px 0;
+    font-size: 0.9rem;
+  }
+}
