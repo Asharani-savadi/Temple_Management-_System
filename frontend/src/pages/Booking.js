@@ -29,10 +29,14 @@ function Booking() {
     specialRequests: ''
   });
 
-  // Check URL parameters on component mount
+  // Check URL parameters and pathname on component mount
   useEffect(() => {
     const type = searchParams.get('type');
-    if (type === 'rooms' || type === 'marriage') {
+    const isRoomBookingPath = window.location.pathname === '/room-booking';
+    if (isRoomBookingPath) {
+      setBookingType('rooms');
+      setBookingStep('calendar');
+    } else if (type === 'rooms' || type === 'marriage') {
       setBookingType(type);
       setBookingStep('calendar');
     }

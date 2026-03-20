@@ -12,6 +12,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .logo a {
@@ -49,6 +50,7 @@
 .nav {
   display: flex;
   gap: 2rem;
+  align-items: center;
 }
 
 .nav a {
@@ -82,28 +84,67 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-.admin-login-btn {
+/* Unified nav auth buttons */
+.nav-login-btn {
   background: rgba(255, 215, 0, 0.2) !important;
   border: 2px solid #ffd700 !important;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600 !important;
+  border-radius: 5px;
 }
 
-.admin-login-btn:hover {
+.nav-login-btn:hover {
   background: #ffd700 !important;
   color: #dc143c !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
 }
 
-.admin-login-btn svg {
-  font-size: 1.1rem;
+.nav-user-btn {
+  background: rgba(255,255,255,0.15) !important;
+  border: 2px solid rgba(255,255,255,0.7) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600 !important;
+  border-radius: 5px;
+}
+
+.nav-user-btn:hover {
+  background: white !important;
+  color: #dc143c !important;
+}
+
+.nav-logout-btn {
+  background: none;
+  border: 2px solid rgba(255,255,255,0.5);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.nav-logout-btn:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: white;
 }
 
 .close-btn {
   display: none;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .mobile-overlay {
@@ -123,6 +164,12 @@
     display: block;
     font-size: 1.8rem;
     z-index: 1002;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .mobile-overlay {
@@ -210,7 +257,7 @@
     border-bottom: none;
   }
 
-  .admin-login-btn {
+  .nav-login-btn, .nav-user-btn {
     margin-top: 1rem;
     justify-content: center;
     border-radius: 8px !important;

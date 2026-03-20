@@ -197,6 +197,32 @@ class ApiClient {
     });
   }
 
+  // User Auth
+  async userRegister(name, email, phone, password) {
+    return this.request('/user/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, phone, password }),
+    });
+  }
+
+  async userLogin(email, password) {
+    return this.request('/user/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async getUserProfile(id) {
+    return this.request(`/user/profile/${id}`);
+  }
+
+  async updateUserProfile(id, updates) {
+    return this.request(`/user/profile/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
   // Audio Tracks
   async getAudioTracks(params = {}) {
     const queryString = new URLSearchParams(params).toString();

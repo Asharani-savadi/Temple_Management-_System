@@ -1104,6 +1104,87 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+// ============================================
+// USER AUTH ENDPOINTS
+// ============================================
+
+// User register
+app.post('/api/user/register', async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({ success: false, error: 'All fields are required' });
+    }
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length > 0) {
+      return res.status(409).json({ success: false, error: 'Email already registered' });
+    }
+    const [result] = await pool.query(
+      'INSERT INTO users (name, email, phone, password_hash) VALUES (?, ?, ?, ?)',
+      [name, email, phone, password]
+    );
+    const [rows] = await pool.query('SELECT id, name, email, phone, created_at FROM users WHERE id = ?', [result.insertId]);
+    res.status(201).json({ success: true, user: rows[0] });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// User login
+app.post('/api/user/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+    const [rows] = await pool.query(
+      'SELECT id, name, email, phone, created_at FROM users WHERE email = ? AND password_hash = ?',
+      [email, password]
+    );
+    if (rows.length === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
+    }
+    res.json({ success: true, user: rows[0] });
+  } catch (error) {
+    console.error('Error logging in user:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get user profile + bookings
+app.get('/api/user/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [users] = await pool.query('SELECT id, name, email, phone, created_at FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const [bookings] = await pool.query(
+      'SELECT * FROM bookings WHERE email = ? ORDER BY created_at DESC',
+      [users[0].email]
+    );
+    res.json({ success: true, user: users[0], bookings });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update user profile
+app.put('/api/user/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone } = req.body;
+    await pool.query('UPDATE users SET name = ?, phone = ? WHERE id = ?', [name, phone, id]);
+    const [rows] = await pool.query('SELECT id, name, email, phone, created_at FROM users WHERE id = ?', [id]);
+    res.json({ success: true, user: rows[0] });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
