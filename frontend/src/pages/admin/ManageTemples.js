@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { GiTempleGate } from 'react-icons/gi';
+import AdminNavbar from '../../components/AdminNavbar';
 import './AdminManage.css';
 
 function ManageTemples() {
@@ -21,15 +22,8 @@ function ManageTemples() {
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
-    if (!isLoggedIn) {
-      navigate('/admin/login');
-    }
+    if (!isLoggedIn) navigate('/login');
   }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminLoggedIn');
-    navigate('/admin/login');
-  };
 
   const handleAdd = () => {
     setFormData({
@@ -91,14 +85,9 @@ function ManageTemples() {
 
   return (
     <div className="admin-manage-page">
-      <div className="admin-header">
-        <div className="admin-header-content">
-          <h1><GiTempleGate /> Manage Temples</h1>
-          <div className="header-actions">
-            <Link to="/admin/dashboard" className="btn-back">← Back to Dashboard</Link>
-            <button className="btn-logout" onClick={handleLogout}>Logout</button>
-          </div>
-        </div>
+      <AdminNavbar />
+      <div className="manage-page-header">
+        <h1><GiTempleGate /> Manage Temples</h1>
       </div>
 
       <div className="manage-container">

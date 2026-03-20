@@ -1,27 +1,22 @@
 import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { FaCalendarAlt, FaHourglassHalf, FaDonate, FaUsers, FaHome, FaChurch, FaImage } from 'react-icons/fa';
 import { GiTempleGate } from 'react-icons/gi';
+import AdminNavbar from '../../components/AdminNavbar';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
   const navigate = useNavigate();
   const { bookings, donations } = useData();
+  const { logoutAdmin } = useAuth();
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
-    if (!isLoggedIn) {
-      navigate('/admin/login');
-    }
+    if (!isLoggedIn) navigate('/login');
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminLoggedIn');
-    navigate('/admin/login');
-  };
-
-  // Calculate real stats from Supabase data
   const totalBookings = bookings.length;
   const pendingBookings = bookings.filter(b => b.status === 'Pending').length;
   const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
@@ -44,14 +39,7 @@ function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <div className="admin-header">
-        <div className="admin-header-content">
-          <h1>Admin Dashboard</h1>
-          <button className="btn-logout" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      </div>
+      <AdminNavbar />
 
       <div className="dashboard-container">
         <div className="stats-grid">

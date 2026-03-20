@@ -8,6 +8,7 @@ import { GiCow, GiMusicalNotes } from 'react-icons/gi';
 import { IoLibrary } from 'react-icons/io5';
 import { BiMusic } from 'react-icons/bi';
 import AudioPlayer from '../components/AudioPlayer';
+import Testimonials from '../components/Testimonials';
 
 function Home() {
   const navigate = useNavigate();
@@ -231,28 +232,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="services-section">
-        <div className="container">
-          <h2 className="section-heading">ONLINE BOOKING SERVICES</h2>
-          
-          <div className="service-grid">
-            <button onClick={() => navigate('/booking?type=rooms')} className="service-btn">
-              <span className="icon"><FaHome /></span>
-              <span>ROOM BOOKING</span>
-            </button>
-            <a href="/services" className="service-btn">
-              <span className="icon"><FaDonate /></span>
-              <span>E-HUNDI</span>
-            </a>
-            <button onClick={() => navigate('/booking?type=marriage')} className="service-btn">
-              <span className="icon"><FaChurch /></span>
-              <span>MARRIAGE HALL</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Other Services */}
       <section className="services-section">
         <div className="container">
@@ -300,7 +279,6 @@ function Home() {
       {selectedProject && (
         <div className="project-modal-overlay" onClick={() => setSelectedProject(null)}>
           <div className="project-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedProject(null)}>×</button>
             <div className="modal-header">
               <div className="modal-icon">
                 {React.createElement(projectsData[selectedProject].icon)}
@@ -393,11 +371,13 @@ function Home() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <Testimonials />
+
       {/* Audio Modal */}
       {selectedAudio && (
         <div className="audio-modal-overlay" onClick={() => setSelectedAudio(null)}>
           <div className="audio-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedAudio(null)}>×</button>
             <AudioPlayer category={selectedAudio} onClose={() => setSelectedAudio(null)} />
           </div>
         </div>

@@ -12,7 +12,7 @@ const OnlineBookingServices = () => {
       title: 'Room Booking',
       icon: FaHome,
       description: 'Book accommodation rooms at the temple',
-      path: '/rooms-donor',
+      path: '/room-booking',
       color: '#fff'
     },
     {

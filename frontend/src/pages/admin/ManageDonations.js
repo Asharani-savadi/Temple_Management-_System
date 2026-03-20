@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import Receipt from '../../components/Receipt';
+import AdminNavbar from '../../components/AdminNavbar';
 import './AdminManage.css';
 
 function ManageDonations() {
@@ -63,11 +63,9 @@ function ManageDonations() {
 
   return (
     <div className="admin-manage-page">
-      <div className="admin-header">
-        <div className="admin-header-content">
-          <h1>Manage Donations</h1>
-          <Link to="/admin/dashboard" className="btn-back">← Back to Dashboard</Link>
-        </div>
+      <AdminNavbar />
+      <div className="manage-page-header">
+        <h1>Manage Donations</h1>
       </div>
 
       <div className="manage-container">

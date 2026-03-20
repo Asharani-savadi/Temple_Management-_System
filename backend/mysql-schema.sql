@@ -12,6 +12,9 @@ USE temple_management;
 -- ============================================
 -- DROP EXISTING TABLES (if re-running)
 -- ============================================
+DROP TABLE IF EXISTS darshan_bookings;
+DROP TABLE IF EXISTS darshan_time_slots;
+DROP TABLE IF EXISTS darshan_types;
 DROP TABLE IF EXISTS bookings;
 DROP TABLE IF EXISTS donations;
 DROP TABLE IF EXISTS gallery_images;
@@ -20,10 +23,23 @@ DROP TABLE IF EXISTS admin_users;
 DROP TABLE IF EXISTS temples;
 DROP TABLE IF EXISTS marriage_halls;
 DROP TABLE IF EXISTS rooms;
+DROP TABLE IF EXISTS users;
 
 -- ============================================
 -- CREATE TABLES
 -- ============================================
+
+-- Users table
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Rooms table
 CREATE TABLE rooms (
@@ -180,6 +196,79 @@ INSERT INTO gallery_images (title, category, url) VALUES
   ('Annual Event', 'events', 'https://via.placeholder.com/300x200/f39c12/ffffff?text=Event'),
   ('Guest Rooms', 'facilities', 'https://via.placeholder.com/300x200/9b59b6/ffffff?text=Rooms'),
   ('Dining Hall', 'facilities', 'https://via.placeholder.com/300x200/3498db/ffffff?text=Dining');
+
+-- ============================================
+-- DARSHAN TABLES
+-- ============================================
+
+CREATE TABLE darshan_types (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  type_code VARCHAR(50) UNIQUE NOT NULL,
+  type_name VARCHAR(255) NOT NULL,
+  description TEXT,
+  price_per_person INT DEFAULT 0,
+  max_persons_per_slot INT DEFAULT 50,
+  duration_minutes INT DEFAULT 30,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE darshan_time_slots (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slot_time VARCHAR(20) NOT NULL,
+  slot_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE darshan_bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  booking_id VARCHAR(100) UNIQUE NOT NULL,
+  devotee_name VARCHAR(255) NOT NULL,
+  devotee_phone VARCHAR(50) NOT NULL,
+  devotee_email VARCHAR(255),
+  devotee_address TEXT,
+  darshan_type VARCHAR(50) NOT NULL,
+  booking_date DATE NOT NULL,
+  time_slot VARCHAR(20) NOT NULL,
+  number_of_persons INT NOT NULL DEFAULT 1,
+  amount_per_person INT DEFAULT 0,
+  total_amount INT DEFAULT 0,
+  payment_status VARCHAR(50) DEFAULT 'pending',
+  booking_status VARCHAR(50) DEFAULT 'pending',
+  confirmation_code VARCHAR(100),
+  special_requests TEXT,
+  payment_method VARCHAR(50),
+  booking_confirmed_at TIMESTAMP NULL,
+  checked_in_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_darshan_date (booking_date),
+  INDEX idx_darshan_status (booking_status),
+  INDEX idx_darshan_phone (devotee_phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert default darshan types
+INSERT INTO darshan_types (type_code, type_name, description, price_per_person, max_persons_per_slot) VALUES
+  ('general', 'General Darshan', 'Regular darshan for all devotees', 0, 100),
+  ('special', 'Special Darshan', 'Special darshan with priority access', 100, 30),
+  ('vip', 'VIP Darshan', 'VIP darshan with exclusive access', 500, 10);
+
+-- Insert default time slots
+INSERT INTO darshan_time_slots (slot_time, slot_order) VALUES
+  ('06:00 AM', 1),
+  ('07:00 AM', 2),
+  ('08:00 AM', 3),
+  ('09:00 AM', 4),
+  ('10:00 AM', 5),
+  ('11:00 AM', 6),
+  ('12:00 PM', 7),
+  ('04:00 PM', 8),
+  ('05:00 PM', 9),
+  ('06:00 PM', 10),
+  ('07:00 PM', 11),
+  ('08:00 PM', 12);
 
 -- ============================================
 -- SETUP COMPLETE!

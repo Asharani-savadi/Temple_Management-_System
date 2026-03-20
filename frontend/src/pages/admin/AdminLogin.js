@@ -1,40 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../apiClient';
+import { useAuth } from '../../context/AuthContext';
 import './AdminLogin.css';
 
 function AdminLogin() {
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: ''
-  });
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { loginAdmin } = useAuth();
 
   const handleChange = (e) => {
-    setCredentials({
-      ...credentials,
-      [e.target.name]: e.target.value
-    });
+    setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // Call admin login API
       const data = await apiClient.adminLogin(credentials.username, credentials.password);
-
       if (!data.success) {
         alert('Invalid credentials! Use username: admin, password: admin123');
         setLoading(false);
         return;
       }
-
-      // Store admin session
-      localStorage.setItem('adminLoggedIn', 'true');
-      localStorage.setItem('adminUser', JSON.stringify(data.user));
+      loginAdmin(data.user);
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Login error:', error);
