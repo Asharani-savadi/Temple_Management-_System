@@ -1,15 +1,48 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import './Receipt.css';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaCheckCircle } from 'react-icons/fa';
 import { GiTempleGate } from 'react-icons/gi';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 function Receipt({ booking, onClose }) {
+  const receiptRef = useRef(null);
+
   const handlePrint = () => {
     window.print();
   };
 
-  const handleDownload = () => {
-    window.print();
+  const handleDownload = async () => {
+    const element = receiptRef.current;
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      // Always fit to single page
+      const finalHeight = Math.min(imgHeight, pdfHeight);
+      const finalWidth = imgHeight > pdfHeight
+        ? (canvas.width * pdfHeight) / canvas.height
+        : pdfWidth;
+      const xOffset = imgHeight > pdfHeight ? (pdfWidth - finalWidth) / 2 : 0;
+
+      pdf.addImage(imgData, 'PNG', xOffset, 0, finalWidth, finalHeight);
+      pdf.save(`receipt-${Date.now()}.pdf`);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+      window.print();
+    }
   };
 
   const getCurrentDateTime = () => {
@@ -42,9 +75,9 @@ function Receipt({ booking, onClose }) {
   const isDonation = booking.type === 'Donation' || booking.category || booking.purpose;
 
   return (
-    <div className="receipt-overlay" onClick={onClose}>
+    <div className="receipt-overlay">
       <div className="receipt-container" onClick={(e) => e.stopPropagation()}>
-        <div className="receipt-content">
+        <div className="receipt-content" ref={receiptRef}>
           {/* Header */}
           <div className="receipt-header">
             <div className="receipt-logo">
@@ -253,7 +286,7 @@ function Receipt({ booking, onClose }) {
             Download PDF
           </button>
           <button className="receipt-btn receipt-btn-close" onClick={onClose}>
-            Close
+            Back to Home
           </button>
         </div>
       </div>

@@ -192,7 +192,7 @@ function Booking() {
   };
 
   const handleViewReceipt = () => {
-    setShowReceipt(true);
+    setBookingStep('receipt');
   };
 
   return (
@@ -534,8 +534,8 @@ function Booking() {
         </section>
       )}
 
-      {showReceipt && confirmedBooking && (
-        <Receipt booking={confirmedBooking} onClose={() => setShowReceipt(false)} />
+      {bookingStep === 'receipt' && confirmedBooking && (
+        <Receipt booking={confirmedBooking} onClose={handleBackToServices} />
       )}
     </div>
   );

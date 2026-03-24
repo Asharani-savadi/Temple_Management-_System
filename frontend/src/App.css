@@ -185,3 +185,12 @@ img {
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
+
+/* Hide navbar and footer when printing receipt */
+@media print {
+  .header,
+  .footer,
+  nav {
+    display: none !important;
+  }
+}
