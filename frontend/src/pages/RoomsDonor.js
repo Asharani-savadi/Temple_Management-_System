@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Services.css';
+import { apiClient } from '../apiClient';
 
 function RoomsDonor() {
   const [formData, setFormData] = useState({
@@ -10,6 +11,8 @@ function RoomsDonor() {
     roomType: 'standard',
     message: ''
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -18,17 +21,27 @@ function RoomsDonor() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Thank you for your generous donation! We will contact you shortly.');
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      amount: '',
-      roomType: 'standard',
-      message: ''
-    });
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await apiClient.createDonation({
+        donor: formData.name,
+        category: `Room Donor - ${formData.roomType} (${formData.phone}${formData.email ? ', ' + formData.email : ''}${formData.message ? ' | ' + formData.message : ''})`,
+        amount: parseInt(formData.amount, 10),
+        date: new Date().toISOString().split('T')[0],
+        status: 'Pending'
+      });
+
+      alert('Thank you for your generous donation! We will contact you shortly.');
+      setFormData({ name: '', email: '', phone: '', amount: '', roomType: 'standard', message: '' });
+    } catch (err) {
+      setError('Failed to submit donation. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -128,8 +141,9 @@ function RoomsDonor() {
               ></textarea>
             </div>
 
-            <button type="submit" className="btn btn-submit">
-              Proceed to Payment
+            {error && <p style={{ color: 'red', marginBottom: '10px' }}>{error}</p>}
+            <button type="submit" className="btn btn-submit" disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Proceed to Payment'}
             </button>
           </form>
         </div>

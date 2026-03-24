@@ -16,7 +16,7 @@ const navLinks = [
   { label: 'Halls',     to: '/admin/halls',     icon: FaChurch },
   { label: 'Donations', to: '/admin/donations', icon: FaDonate },
   { label: 'Gallery',   to: '/admin/gallery',   icon: FaImage },
-  { label: 'Temples',   to: '/admin/temples',   icon: GiTempleGate },
+  { label: 'Darshan',   to: '/admin/darshan',   icon: FaPrayingHands },
   { label: 'Users',     to: '/admin/users',     icon: FaUsers },
   { label: 'Content',   to: '/admin/content',   icon: FaFileAlt },
   { label: 'Settings',  to: '/admin/settings',  icon: FaCog },

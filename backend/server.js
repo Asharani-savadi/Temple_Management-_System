@@ -2,6 +2,9 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -24,6 +27,28 @@ const transporter = nodemailer.createTransport({
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files statically
+const uploadsDir = path.join(__dirname, 'uploads', 'rooms');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Multer config for room photos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const unique = `room_${Date.now()}_${Math.round(Math.random() * 1e6)}`;
+    cb(null, unique + path.extname(file.originalname));
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files allowed'));
+  }
+});
 
 // MySQL connection pool
 const pool = mysql.createPool({
@@ -1181,6 +1206,127 @@ app.put('/api/user/profile/:id', async (req, res) => {
     res.json({ success: true, user: rows[0] });
   } catch (error) {
     console.error('Error updating profile:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ROOM PHOTOS ENDPOINTS
+// ============================================
+
+// Get photos for a room
+app.get('/api/rooms/:id/photos', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM room_photos WHERE room_id = ? ORDER BY is_primary DESC, sort_order ASC',
+      [req.params.id]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Upload photos for a room (up to 10 at once)
+app.post('/api/rooms/:id/photos', upload.array('photos', 10), async (req, res) => {
+  try {
+    const roomId = req.params.id;
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, error: 'No files uploaded' });
+    }
+
+    // Check if room already has a primary photo
+    const [existing] = await pool.query(
+      'SELECT id FROM room_photos WHERE room_id = ? AND is_primary = TRUE',
+      [roomId]
+    );
+    const hasPrimary = existing.length > 0;
+
+    const inserted = [];
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      const photoUrl = `/uploads/rooms/${file.filename}`;
+      const isPrimary = !hasPrimary && i === 0;
+      const [result] = await pool.query(
+        'INSERT INTO room_photos (room_id, photo_url, is_primary, sort_order) VALUES (?, ?, ?, ?)',
+        [roomId, photoUrl, isPrimary, i]
+      );
+      inserted.push({ id: result.insertId, photo_url: photoUrl, is_primary: isPrimary });
+    }
+
+    // Update room's main image to first photo if no primary existed
+    if (!hasPrimary && inserted.length > 0) {
+      await pool.query('UPDATE rooms SET image = ? WHERE id = ?', [inserted[0].photo_url, roomId]);
+    }
+
+    res.status(201).json({ success: true, data: inserted });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Set a photo as primary
+app.put('/api/rooms/:roomId/photos/:photoId/primary', async (req, res) => {
+  try {
+    const { roomId, photoId } = req.params;
+    await pool.query('UPDATE room_photos SET is_primary = FALSE WHERE room_id = ?', [roomId]);
+    await pool.query('UPDATE room_photos SET is_primary = TRUE WHERE id = ? AND room_id = ?', [photoId, roomId]);
+    const [photo] = await pool.query('SELECT photo_url FROM room_photos WHERE id = ?', [photoId]);
+    if (photo.length > 0) {
+      await pool.query('UPDATE rooms SET image = ? WHERE id = ?', [photo[0].photo_url, roomId]);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete a room photo
+app.delete('/api/rooms/:roomId/photos/:photoId', async (req, res) => {
+  try {
+    const { roomId, photoId } = req.params;
+    const [rows] = await pool.query('SELECT * FROM room_photos WHERE id = ? AND room_id = ?', [photoId, roomId]);
+    if (rows.length === 0) return res.status(404).json({ success: false, error: 'Photo not found' });
+
+    // Delete file from disk
+    const filePath = path.join(__dirname, rows[0].photo_url);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    await pool.query('DELETE FROM room_photos WHERE id = ?', [photoId]);
+
+    // If deleted photo was primary, set next one as primary
+    if (rows[0].is_primary) {
+      const [next] = await pool.query(
+        'SELECT id, photo_url FROM room_photos WHERE room_id = ? ORDER BY sort_order ASC LIMIT 1',
+        [roomId]
+      );
+      if (next.length > 0) {
+        await pool.query('UPDATE room_photos SET is_primary = TRUE WHERE id = ?', [next[0].id]);
+        await pool.query('UPDATE rooms SET image = ? WHERE id = ?', [next[0].photo_url, roomId]);
+      } else {
+        await pool.query('UPDATE rooms SET image = NULL WHERE id = ?', [roomId]);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get all rooms WITH their photos
+app.get('/api/rooms-with-photos', async (req, res) => {
+  try {
+    const [rooms] = await pool.query('SELECT * FROM rooms ORDER BY name ASC, id ASC');
+    const [photos] = await pool.query('SELECT * FROM room_photos ORDER BY is_primary DESC, sort_order ASC');
+    const photosByRoom = {};
+    photos.forEach(p => {
+      if (!photosByRoom[p.room_id]) photosByRoom[p.room_id] = [];
+      photosByRoom[p.room_id].push(p);
+    });
+    const result = rooms.map(r => ({ ...r, photos: photosByRoom[r.id] || [] }));
+    res.json({ success: true, data: result });
+  } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -38,7 +38,6 @@ function Header() {
           <nav className={`nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
             <Link to="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <Link to="/about" onClick={() => setMobileMenuOpen(false)}>About</Link>
-            <Link to="/booking" onClick={() => setMobileMenuOpen(false)}>Booking</Link>
             <Link to="/gallery" onClick={() => setMobileMenuOpen(false)}>Gallery</Link>
             <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
 

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
-import { FaCalendarAlt, FaHourglassHalf, FaDonate, FaUsers, FaHome, FaChurch, FaImage } from 'react-icons/fa';
+import { FaCalendarAlt, FaHourglassHalf, FaDonate, FaUsers, FaHome, FaChurch, FaImage, FaPrayingHands } from 'react-icons/fa';
 import { GiTempleGate } from 'react-icons/gi';
 import AdminNavbar from '../../components/AdminNavbar';
 import './AdminDashboard.css';
@@ -32,7 +32,7 @@ function AdminDashboard() {
   const managementSections = [
     { title: 'Room Management', icon: FaHome, link: '/admin/rooms', description: 'Manage room availability and pricing' },
     { title: 'Marriage Hall', icon: FaChurch, link: '/admin/halls', description: 'Manage marriage hall bookings' },
-    { title: 'Temples', icon: GiTempleGate, link: '/admin/temples', description: 'Manage temple information' },
+    { title: 'Darshan Booking', icon: FaPrayingHands, link: '/admin/darshan', description: 'Manage darshan slots and bookings' },
     { title: 'E-Hundi', icon: FaDonate, link: '/admin/donations', description: 'Manage online donations and E-Hundi' },
     { title: 'Gallery', icon: FaImage, link: '/admin/gallery', description: 'Manage gallery images' }
   ];

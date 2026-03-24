@@ -61,6 +61,18 @@ CREATE TABLE rooms (
   INDEX idx_rooms_type (type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Room photos table (multiple photos per room)
+CREATE TABLE room_photos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  room_id INT NOT NULL,
+  photo_url VARCHAR(500) NOT NULL,
+  is_primary BOOLEAN DEFAULT FALSE,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+  INDEX idx_room_photos_room_id (room_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Marriage halls table
 CREATE TABLE marriage_halls (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -253,7 +265,10 @@ CREATE TABLE darshan_bookings (
 INSERT INTO darshan_types (type_code, type_name, description, price_per_person, max_persons_per_slot) VALUES
   ('general', 'General Darshan', 'Regular darshan for all devotees', 0, 100),
   ('special', 'Special Darshan', 'Special darshan with priority access', 100, 30),
-  ('vip', 'VIP Darshan', 'VIP darshan with exclusive access', 500, 10);
+  ('vip', 'VIP Darshan', 'VIP darshan with exclusive access', 500, 10),
+  ('raghavendra', 'Raghavendra Temple Darshan', 'Darshan at Sri Raghavendra Swami Temple', 0, 80),
+  ('ganesh', 'Ganesh Temple Darshan', 'Darshan at Sri Ganesh Temple — blessings for new beginnings', 0, 80),
+  ('shiva', 'Shiva Temple Darshan', 'Darshan at Sri Shiva Temple — Mahadeva blessings', 0, 80);
 
 -- Insert default time slots
 INSERT INTO darshan_time_slots (slot_time, slot_order) VALUES

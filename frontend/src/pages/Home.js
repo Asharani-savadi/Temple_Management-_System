@@ -179,7 +179,7 @@ function Home() {
                 <div className="hero-icon"><slide.icon /></div>
                 <h1 className="hero-title">{slide.title}</h1>
                 <p className="hero-subtitle">{slide.subtitle}</p>
-                <button onClick={() => navigate('/booking')} className="hero-cta">Book Now</button>
+
               </div>
             </div>
           ))}
@@ -313,42 +313,6 @@ function Home() {
           </div>
         </div>
       )}
-
-      {/* Testimonials Section */}
-      <section className="testimonials-section">
-        <div className="container">
-          <h2 className="section-heading">WHAT DEVOTEES SAY</h2>
-          <div className="testimonials-grid">
-            <div className="testimonial-card">
-              <div className="testimonial-stars">
-                <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
-              </div>
-              <p className="testimonial-text">
-                "A truly divine experience. The facilities are excellent and the staff is very helpful."
-              </p>
-              <div className="testimonial-author">- Rajesh Kumar</div>
-            </div>
-            <div className="testimonial-card">
-              <div className="testimonial-stars">
-                <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
-              </div>
-              <p className="testimonial-text">
-                "Peaceful atmosphere and well-maintained rooms. Perfect for spiritual retreat."
-              </p>
-              <div className="testimonial-author">- Priya Sharma</div>
-            </div>
-            <div className="testimonial-card">
-              <div className="testimonial-stars">
-                <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
-              </div>
-              <p className="testimonial-text">
-                "The online booking system is very convenient. Highly recommended!"
-              </p>
-              <div className="testimonial-author">- Amit Patel</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Audio Section */}
       <section className="audio-section">

@@ -256,6 +256,35 @@ class ApiClient {
     });
   }
 
+  // Room Photos
+  async getRoomPhotos(roomId) {
+    return this.request(`/rooms/${roomId}/photos`);
+  }
+
+  async uploadRoomPhotos(roomId, files) {
+    const formData = new FormData();
+    files.forEach(file => formData.append('photos', file));
+    const url = `${API_URL}/rooms/${roomId}/photos`;
+    const response = await fetch(url, { method: 'POST', body: formData });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Upload failed');
+    }
+    return response.json();
+  }
+
+  async setRoomPhotoPrimary(roomId, photoId) {
+    return this.request(`/rooms/${roomId}/photos/${photoId}/primary`, { method: 'PUT' });
+  }
+
+  async deleteRoomPhoto(roomId, photoId) {
+    return this.request(`/rooms/${roomId}/photos/${photoId}`, { method: 'DELETE' });
+  }
+
+  async getRoomsWithPhotos() {
+    return this.request('/rooms-with-photos');
+  }
+
   // Darshan Bookings
   async getDarshanTypes() {
     return this.request('/darshan-types');

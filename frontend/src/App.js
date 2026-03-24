@@ -27,6 +27,7 @@ import ManageGallery from './pages/admin/ManageGallery';
 import ManageContent from './pages/admin/ManageContent';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageTemples from './pages/admin/ManageTemples';
+import ManageDarshan from './pages/admin/ManageDarshan';
 import Settings from './pages/admin/Settings';
 import DarshanBooking from './pages/DarshanBooking';
 import OnlineBookingServices from './pages/OnlineBookingServices';
@@ -55,6 +56,7 @@ function App() {
           <Route path="/admin/content" element={<ManageContent />} />
           <Route path="/admin/users" element={<ManageUsers />} />
           <Route path="/admin/temples" element={<ManageTemples />} />
+          <Route path="/admin/darshan" element={<ManageDarshan />} />
           <Route path="/admin/settings" element={<Settings />} />
 
           {/* Public Routes */}

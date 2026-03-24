@@ -1,629 +1,428 @@
-import React, { useState, useEffect } from 'react';
-import { useData } from '../../context/DataContext';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { apiClient } from '../../apiClient';
-import Receipt from '../../components/Receipt';
 import AdminNavbar from '../../components/AdminNavbar';
 import './AdminManage.css';
+import './ManageRooms.css';
 
-function ManageRooms() {
-  const { rooms, bookings, refreshData } = useData();
-  const [roomTypes, setRoomTypes] = useState([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [currentRoomType, setCurrentRoomType] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    type: '',
-    price: '',
-    total: '',
-    lift: false,
-    floor: '',
-    occupancy: '',
-    commode_type: '',
-    ac: false
-  });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [showReceipt, setShowReceipt] = useState(false);
+const BACKEND = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api').replace('/api', '');
 
-  // Flatten rooms for display in admin panel
-  useEffect(() => {
-    // Flatten the grouped rooms structure for admin display
-    const flatRooms = [];
-    rooms.forEach(roomGroup => {
-      if (roomGroup.types && roomGroup.types.length > 0) {
-        roomGroup.types.forEach(type => {
-          flatRooms.push({
-            id: type.id,
-            name: roomGroup.name,
-            type: type.name,
-            price: type.price,
-            available: type.available,
-            total: type.total,
-            lift: roomGroup.lift,
-            floor: type.floor,
-            occupancy: type.occupancy,
-            commode_type: type.commode_type,
-            ac: type.ac,
-            image: roomGroup.image
-          });
-        });
-      }
-    });
-    setRoomTypes(flatRooms);
-  }, [rooms]);
+const emptyForm = {
+  name: '', type: '', price: '', total: '',
+  lift: false, floor: '', occupancy: '', commode_type: '', ac: false
+};
 
-  const handleAdd = () => {
-    setFormData({
-      name: '',
-      type: '',
-      price: '',
-      total: '',
-      lift: false,
-      floor: '',
-      occupancy: '',
-      commode_type: '',
-      ac: false
-    });
-    setShowAddModal(true);
+// ─── Gallery / Photo Manager ──────────────────────────────────────────────────
+function PhotoGallery({ room, onClose }) {
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // index
+  const fileRef = useRef();
+
+  const load = useCallback(async () => {
+    try {
+      const res = await apiClient.getRoomPhotos(room.id);
+      setPhotos(res.data || []);
+    } catch (e) { console.error(e); }
+  }, [room.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      await apiClient.uploadRoomPhotos(room.id, files);
+      await load();
+    } catch (err) { alert('Upload failed: ' + err.message); }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
+  const handleSetPrimary = async (photoId) => {
+    try {
+      await apiClient.setRoomPhotoPrimary(room.id, photoId);
+      await load();
+    } catch (e) { alert('Failed: ' + e.message); }
+  };
+
+  const handleDelete = async (photoId) => {
+    if (!window.confirm('Delete this photo?')) return;
+    try {
+      await apiClient.deleteRoomPhoto(room.id, photoId);
+      await load();
+      if (lightbox !== null && photos[lightbox]?.id === photoId) setLightbox(null);
+    } catch (e) { alert('Failed: ' + e.message); }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="photo-gallery-modal" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="gallery-modal-header">
+          <div>
+            <h2>📷 {room.name}</h2>
+            <p className="gallery-subtitle">{room.type} — {photos.length} photo{photos.length !== 1 ? 's' : ''}</p>
+          </div>
+          <button className="gallery-close-btn" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Upload bar */}
+        <div className="gallery-upload-bar">
+          <label className={`gallery-upload-btn ${uploading ? 'uploading' : ''}`}>
+            {uploading ? (
+              <><span className="spinner" /> Uploading…</>
+            ) : (
+              <><span>+</span> Add Photos</>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" multiple hidden
+              onChange={handleUpload} disabled={uploading} />
+          </label>
+          <span className="gallery-upload-hint">Select single or multiple images (JPG, PNG, WEBP · max 5MB each)</span>
+        </div>
+
+        {/* Photo grid */}
+        {photos.length === 0 ? (
+          <div className="gallery-empty">
+            <div className="gallery-empty-icon">🏨</div>
+            <p>No photos yet</p>
+            <p className="gallery-empty-sub">Click "Add Photos" to upload room images</p>
+          </div>
+        ) : (
+          <div className="gallery-grid">
+            {photos.map((p, idx) => (
+              <div key={p.id} className={`gallery-item ${p.is_primary ? 'is-primary' : ''}`}>
+                <div className="gallery-img-wrap" onClick={() => setLightbox(idx)}>
+                  <img src={`${BACKEND}${p.photo_url}`} alt={`Room ${idx + 1}`} />
+                  {p.is_primary && <span className="gallery-primary-badge">★ Featured</span>}
+                  <div className="gallery-img-overlay">
+                    <span>View</span>
+                  </div>
+                </div>
+                <div className="gallery-item-actions">
+                  {!p.is_primary && (
+                    <button className="gal-btn gal-btn-star" title="Set as featured"
+                      onClick={() => handleSetPrimary(p.id)}>★ Set Featured</button>
+                  )}
+                  <button className="gal-btn gal-btn-del" title="Delete"
+                    onClick={() => handleDelete(p.id)}>🗑 Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Lightbox */}
+        {lightbox !== null && photos[lightbox] && (
+          <div className="lightbox" onClick={() => setLightbox(null)}>
+            <button className="lightbox-prev"
+              onClick={e => { e.stopPropagation(); setLightbox((lightbox - 1 + photos.length) % photos.length); }}>‹</button>
+            <img src={`${BACKEND}${photos[lightbox].photo_url}`} alt="full" onClick={e => e.stopPropagation()} />
+            <button className="lightbox-next"
+              onClick={e => { e.stopPropagation(); setLightbox((lightbox + 1) % photos.length); }}>›</button>
+            <button className="lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+            <div className="lightbox-counter">{lightbox + 1} / {photos.length}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Room Form ────────────────────────────────────────────────────────────────
+function RoomFormModal({ title, formData, onChange, onSubmit, onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <h2>{title}</h2>
+        <form className="modal-form" onSubmit={onSubmit}>
+          <div className="form-group">
+            <label>Room / Block Name *</label>
+            <input name="name" placeholder="e.g. Dheerendra Vasathi Gruha"
+              value={formData.name} onChange={onChange} required />
+          </div>
+          <div className="form-group">
+            <label>Room Type *</label>
+            <input name="type" placeholder="e.g. NON-AC | 2-Occupancy | First Floor"
+              value={formData.type} onChange={onChange} required />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Price per night (₹) *</label>
+              <input name="price" type="number" min="0" placeholder="500"
+                value={formData.price} onChange={onChange} required />
+            </div>
+            <div className="form-group">
+              <label>Total rooms *</label>
+              <input name="total" type="number" min="1" placeholder="10"
+                value={formData.total} onChange={onChange} required />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Floor</label>
+              <input name="floor" placeholder="Ground Floor / First Floor"
+                value={formData.floor} onChange={onChange} />
+            </div>
+            <div className="form-group">
+              <label>Occupancy</label>
+              <input name="occupancy" placeholder="2-Occupancy"
+                value={formData.occupancy} onChange={onChange} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Commode Type</label>
+            <select name="commode_type" value={formData.commode_type} onChange={onChange}>
+              <option value="">Select</option>
+              <option value="Western">Western</option>
+              <option value="Indian">Indian</option>
+              <option value="Both">Both</option>
+            </select>
+          </div>
+          <div className="form-checkboxes">
+            <label className="checkbox-label">
+              <input type="checkbox" name="ac" checked={formData.ac} onChange={onChange} />
+              <span>AC Available</span>
+            </label>
+            <label className="checkbox-label">
+              <input type="checkbox" name="lift" checked={formData.lift} onChange={onChange} />
+              <span>Lift Available</span>
+            </label>
+          </div>
+          <div className="modal-actions">
+            <button type="submit" className="btn-action btn-view">Save Room</button>
+            <button type="button" className="btn-action btn-delete" onClick={onClose}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+function ManageRooms() {
+  const [rooms, setRooms] = useState([]);
+  const [roomPhotos, setRoomPhotos] = useState({}); // { roomId: [photos] }
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentRoom, setCurrentRoom] = useState(null);
+  const [formData, setFormData] = useState(emptyForm);
+  const [galleryRoom, setGalleryRoom] = useState(null);
+
+  // Load flat rooms directly from API
+  const loadRooms = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiClient.getRooms();
+      const flat = Array.isArray(data) ? data : [];
+      setRooms(flat);
+      // Load photos for each room
+      const photoMap = {};
+      await Promise.all(flat.map(async r => {
+        try {
+          const res = await apiClient.getRoomPhotos(r.id);
+          photoMap[r.id] = res.data || [];
+        } catch (e) { photoMap[r.id] = []; }
+      }));
+      setRoomPhotos(photoMap);
+    } catch (e) {
+      console.error(e);
+      setRooms([]);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadRooms(); }, [loadRooms]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleAdd = () => { setFormData(emptyForm); setShowAddModal(true); };
+
   const handleEdit = (room) => {
-    setCurrentRoomType(room);
+    setCurrentRoom(room);
     setFormData({
-      name: room.name,
-      type: room.type,
-      price: room.price,
-      total: room.total,
-      lift: room.lift,
-      floor: room.floor || '',
-      occupancy: room.occupancy || '',
-      commode_type: room.commode_type || '',
-      ac: room.ac || false
+      name: room.name || '', type: room.type || '', price: room.price || '',
+      total: room.total || '', lift: !!room.lift, floor: room.floor || '',
+      occupancy: room.occupancy || '', commode_type: room.commode_type || '',
+      ac: !!room.ac
     });
     setShowEditModal(true);
   };
 
-  const handleDelete = async (roomId) => {
-    if (!window.confirm('Are you sure you want to delete this room?')) {
-      return;
-    }
-
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this room and all its photos?')) return;
     try {
-      await apiClient.deleteRoom(roomId);
-      await refreshData();
-      alert('Room deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting room:', error);
-      alert('Failed to delete room: ' + error.message);
-    }
+      await apiClient.deleteRoom(id);
+      await loadRooms();
+    } catch (e) { alert('Failed: ' + e.message); }
   };
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
-
     try {
-      const roomData = {
-        name: formData.name,
-        type: formData.type,
-        price: parseInt(formData.price),
-        total: parseInt(formData.total),
-        available: parseInt(formData.total),
-        lift: formData.lift,
-        floor: formData.floor,
-        occupancy: formData.occupancy,
-        commode_type: formData.commode_type,
-        ac: formData.ac,
-        image: 'https://via.placeholder.com/300x200/3498db/ffffff?text=Room'
-      };
-
-      await apiClient.createRoom(roomData);
-      await refreshData();
-      setShowAddModal(false);
-      setFormData({ 
-        name: '', 
-        type: '', 
-        price: '', 
-        total: '', 
-        lift: false,
-        floor: '',
-        occupancy: '',
-        commode_type: '',
-        ac: false
+      await apiClient.createRoom({
+        name: formData.name, type: formData.type,
+        price: parseInt(formData.price) || 0,
+        total: parseInt(formData.total) || 0,
+        available: parseInt(formData.total) || 0,
+        lift: formData.lift, floor: formData.floor,
+        occupancy: formData.occupancy, commode_type: formData.commode_type,
+        ac: formData.ac, image: null
       });
-      alert('Room added successfully!');
-    } catch (error) {
-      console.error('Error adding room:', error);
-      alert('Failed to add room: ' + error.message);
-    }
+      setShowAddModal(false);
+      await loadRooms();
+    } catch (e) { alert('Failed: ' + e.message); }
   };
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
-
     try {
-      const updates = {
-        name: formData.name,
-        type: formData.type,
-        price: parseInt(formData.price),
-        total: parseInt(formData.total),
-        available: parseInt(formData.total),
-        lift: formData.lift,
-        floor: formData.floor,
-        occupancy: formData.occupancy,
-        commode_type: formData.commode_type,
+      await apiClient.updateRoom(currentRoom.id, {
+        name: formData.name, type: formData.type,
+        price: parseInt(formData.price) || 0,
+        total: parseInt(formData.total) || 0,
+        available: parseInt(formData.total) || 0,
+        lift: formData.lift, floor: formData.floor,
+        occupancy: formData.occupancy, commode_type: formData.commode_type,
         ac: formData.ac
-      };
-
-      await apiClient.updateRoom(currentRoomType.id, updates);
-      await refreshData();
+      });
       setShowEditModal(false);
-      alert('Room updated successfully!');
-    } catch (error) {
-      console.error('Error updating room:', error);
-      alert('Failed to update room: ' + error.message);
-    }
+      await loadRooms();
+    } catch (e) { alert('Failed: ' + e.message); }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
-  };
-
-  // Filter room bookings
-  const roomBookings = bookings.filter(booking => 
-    booking.booking_type === 'room' || booking.type === 'Room'
-  );
-
-  const filteredBookings = roomBookings.filter(booking => {
-    const matchesSearch = 
-      (booking.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (booking.email || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || 
-      (booking.status || '').toLowerCase() === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const handleViewBooking = (booking) => {
-    setSelectedBooking(booking);
-    setShowBookingModal(true);
-  };
-
-  const handleGenerateReceipt = (booking) => {
-    setSelectedBooking(booking);
-    setShowReceipt(true);
-  };
-
-  const handleStatusChange = async (bookingId, newStatus) => {
-    try {
-      await apiClient.updateBooking(bookingId, { status: newStatus });
-      await refreshData();
-      setShowBookingModal(false);
-      alert(`Booking status updated to ${newStatus}!`);
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      alert('Failed to update booking status: ' + error.message);
-    }
-  };
-
-  const totalRooms = roomTypes.reduce((sum, type) => sum + (type.total || 0), 0);
-  const availableRooms = roomTypes.reduce((sum, type) => sum + (type.available || 0), 0);
+  const totalRooms = rooms.reduce((s, r) => s + (r.total || 0), 0);
+  const availableRooms = rooms.reduce((s, r) => s + (r.available || 0), 0);
 
   return (
     <div className="admin-manage-page">
       <AdminNavbar />
-      <div className="manage-page-header">
-        <h1>Manage Rooms</h1>
-      </div>
+      <div className="manage-page-header"><h1>Manage Rooms</h1></div>
 
       <div className="manage-container">
+        {/* Stats */}
         <div className="stats-row">
-          <div className="stat-box">
-            <h3>Total Rooms</h3>
-            <p className="stat-value">{totalRooms}</p>
-          </div>
-          <div className="stat-box">
-            <h3>Available</h3>
-            <p className="stat-value">{availableRooms}</p>
-          </div>
-          <div className="stat-box">
-            <h3>Total Bookings</h3>
-            <p className="stat-value">{roomBookings.length}</p>
-          </div>
-          <div className="stat-box">
-            <h3>Pending</h3>
-            <p className="stat-value">
-              {roomBookings.filter(b => (b.status || '').toLowerCase() === 'pending').length}
-            </p>
-          </div>
+          <div className="stat-box"><h3>Room Types</h3><p className="stat-value">{rooms.length}</p></div>
+          <div className="stat-box"><h3>Total Rooms</h3><p className="stat-value">{totalRooms}</p></div>
+          <div className="stat-box"><h3>Available</h3><p className="stat-value">{availableRooms}</p></div>
+          <div className="stat-box"><h3>Occupied</h3><p className="stat-value">{totalRooms - availableRooms}</p></div>
         </div>
 
+        {/* Header + Add button */}
         <div className="management-section">
-          <h2>Rooms</h2>
+          <h2>Room Listings</h2>
           <button className="btn-add" onClick={handleAdd}>+ Add Room</button>
         </div>
 
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Room Name</th>
-                <th>Type</th>
-                <th>Price (₹)</th>
-                <th>Available/Total</th>
-                <th>Lift</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roomTypes.length > 0 ? (
-                roomTypes.map(room => (
-                  <tr key={room.id}>
-                    <td>#{room.id}</td>
-                    <td>{room.name}</td>
-                    <td>{room.type}</td>
-                    <td>₹{room.price}</td>
-                    <td>{room.available}/{room.total}</td>
-                    <td>
-                      <span className={`status-badge ${room.lift ? 'confirmed' : 'cancelled'}`}>
-                        {room.lift ? 'Yes' : 'No'}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn-action btn-edit" 
-                        onClick={() => handleEdit(room)}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="btn-action btn-delete" 
-                        onClick={() => handleDelete(room.id)}
-                        style={{ marginLeft: '5px' }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
-                    No rooms found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Room cards */}
+        {loading ? (
+          <div className="rooms-loading">Loading rooms…</div>
+        ) : rooms.length === 0 ? (
+          <div className="rooms-empty">
+            <div style={{ fontSize: '3rem' }}>🏨</div>
+            <p>No rooms yet. Click "+ Add Room" to create one.</p>
+          </div>
+        ) : (
+          <div className="rooms-card-grid">
+            {rooms.map(room => {
+              const photos = roomPhotos[room.id] || [];
+              const featured = photos.find(p => p.is_primary) || photos[0];
+              return (
+                <div key={room.id} className="room-card">
+                  {/* Photo thumbnail */}
+                  <div className="room-card-thumb" onClick={() => setGalleryRoom(room)}>
+                    {featured ? (
+                      <img src={`${BACKEND}${featured.photo_url}`} alt={room.name} />
+                    ) : (
+                      <div className="room-card-no-photo">
+                        <span>🏨</span>
+                        <p>No photos</p>
+                      </div>
+                    )}
+                    <div className="room-card-thumb-overlay">
+                      <span>📷 {photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {photos.length > 1 && (
+                      <div className="room-thumb-strip">
+                        {photos.slice(0, 4).map((p, i) => (
+                          <img key={p.id} src={`${BACKEND}${p.photo_url}`} alt="" className="thumb-strip-img" />
+                        ))}
+                        {photos.length > 4 && <span className="thumb-more">+{photos.length - 4}</span>}
+                      </div>
+                    )}
+                  </div>
 
-        <div className="management-section" style={{ marginTop: '3rem' }}>
-          <h2>Room Bookings</h2>
-        </div>
-
-        <div className="manage-actions">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <select
-            className="filter-select"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Check-in</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBookings.length > 0 ? (
-                filteredBookings.map((booking) => (
-                  <tr key={booking.id}>
-                    <td>#{booking.id}</td>
-                    <td>{booking.name}</td>
-                    <td>{booking.email}</td>
-                    <td>{booking.phone}</td>
-                    <td>{booking.check_in_date || booking.date}</td>
-                    <td>₹{booking.amount}</td>
-                    <td>
-                      <span className={`status-badge ${(booking.status || '').toLowerCase()}`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn-action btn-view"
-                        onClick={() => handleViewBooking(booking)}
-                      >
-                        View
+                  {/* Info */}
+                  <div className="room-card-body">
+                    <div className="room-card-title-row">
+                      <h3>{room.name}</h3>
+                      <span className="room-price">₹{room.price}<small>/night</small></span>
+                    </div>
+                    <p className="room-type-label">{room.type}</p>
+                    <div className="room-availability">
+                      <div className="avail-bar">
+                        <div className="avail-fill"
+                          style={{ width: `${room.total ? (room.available / room.total) * 100 : 0}%` }} />
+                      </div>
+                      <span>{room.available}/{room.total} available</span>
+                    </div>
+                    <div className="room-tags">
+                      {room.ac && <span className="tag tag-ac">AC</span>}
+                      {room.lift && <span className="tag tag-lift">Lift</span>}
+                      {room.floor && <span className="tag">{room.floor}</span>}
+                      {room.occupancy && <span className="tag">{room.occupancy}</span>}
+                      {room.commode_type && <span className="tag">{room.commode_type} Commode</span>}
+                    </div>
+                    <div className="room-card-actions">
+                      <button className="room-btn room-btn-gallery" onClick={() => setGalleryRoom(room)}>
+                        📷 Gallery
                       </button>
-                      <button 
-                        className="btn-action btn-edit"
-                        onClick={() => handleGenerateReceipt(booking)}
-                        style={{ marginLeft: '5px' }}
-                      >
-                        Receipt
+                      <button className="room-btn room-btn-edit" onClick={() => handleEdit(room)}>
+                        ✏ Edit
                       </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>
-                    No room bookings found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <button className="room-btn room-btn-delete" onClick={() => handleDelete(room.id)}>
+                        🗑 Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Add Room Modal */}
+      {/* Photo Gallery Modal */}
+      {galleryRoom && (
+        <PhotoGallery
+          room={galleryRoom}
+          onClose={async () => {
+            // Refresh photos for this room on close
+            try {
+              const res = await apiClient.getRoomPhotos(galleryRoom.id);
+              setRoomPhotos(prev => ({ ...prev, [galleryRoom.id]: res.data || [] }));
+            } catch (e) {}
+            setGalleryRoom(null);
+          }}
+        />
+      )}
+
+      {/* Add Modal */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Add Room</h2>
-            <form className="modal-form" onSubmit={handleSubmitAdd}>
-              <input 
-                type="text" 
-                name="name"
-                placeholder="Room Name (e.g., Dheerendra Vasathi Gruha)" 
-                value={formData.name}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="text" 
-                name="type"
-                placeholder="Type (e.g., NON-AC | 2-Occupancy | First Floor | Western Commode)" 
-                value={formData.type}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="number" 
-                name="price"
-                placeholder="Price per night" 
-                value={formData.price}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="number" 
-                name="total"
-                placeholder="Total rooms available" 
-                value={formData.total}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="text" 
-                name="floor"
-                placeholder="Floor (e.g., First Floor, Ground Floor)" 
-                value={formData.floor}
-                onChange={handleChange}
-              />
-              <input 
-                type="text" 
-                name="occupancy"
-                placeholder="Occupancy (e.g., 2-Occupancy)" 
-                value={formData.occupancy}
-                onChange={handleChange}
-              />
-              <input 
-                type="text" 
-                name="commode_type"
-                placeholder="Commode Type (e.g., Western, Indian)" 
-                value={formData.commode_type}
-                onChange={handleChange}
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  name="ac"
-                  checked={formData.ac}
-                  onChange={handleChange}
-                />
-                <span>AC Available</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  name="lift"
-                  checked={formData.lift}
-                  onChange={handleChange}
-                />
-                <span>Has Lift</span>
-              </label>
-              <div className="modal-actions">
-                <button type="submit" className="btn-action btn-view">Add</button>
-                <button 
-                  type="button" 
-                  className="btn-action btn-delete" 
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <RoomFormModal title="Add New Room" formData={formData}
+          onChange={handleChange} onSubmit={handleSubmitAdd}
+          onClose={() => setShowAddModal(false)} />
       )}
 
-      {/* Edit Room Modal */}
+      {/* Edit Modal */}
       {showEditModal && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Edit Room</h2>
-            <form className="modal-form" onSubmit={handleSubmitEdit}>
-              <input 
-                type="text" 
-                name="name"
-                placeholder="Room Name" 
-                value={formData.name}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="text" 
-                name="type"
-                placeholder="Type" 
-                value={formData.type}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="number" 
-                name="price"
-                placeholder="Price per night" 
-                value={formData.price}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="number" 
-                name="total"
-                placeholder="Total rooms available" 
-                value={formData.total}
-                onChange={handleChange}
-                required 
-              />
-              <input 
-                type="text" 
-                name="floor"
-                placeholder="Floor" 
-                value={formData.floor}
-                onChange={handleChange}
-              />
-              <input 
-                type="text" 
-                name="occupancy"
-                placeholder="Occupancy" 
-                value={formData.occupancy}
-                onChange={handleChange}
-              />
-              <input 
-                type="text" 
-                name="commode_type"
-                placeholder="Commode Type" 
-                value={formData.commode_type}
-                onChange={handleChange}
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  name="ac"
-                  checked={formData.ac}
-                  onChange={handleChange}
-                />
-                <span>AC Available</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  name="lift"
-                  checked={formData.lift}
-                  onChange={handleChange}
-                />
-                <span>Has Lift</span>
-              </label>
-              <div className="modal-actions">
-                <button type="submit" className="btn-action btn-view">Update</button>
-                <button 
-                  type="button" 
-                  className="btn-action btn-delete" 
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Booking Details Modal */}
-      {showBookingModal && selectedBooking && (
-        <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Room Booking Details</h2>
-            <div className="booking-details">
-              <p><strong>Booking ID:</strong> #{selectedBooking.id}</p>
-              <p><strong>Guest Name:</strong> {selectedBooking.name}</p>
-              <p><strong>Email:</strong> {selectedBooking.email}</p>
-              <p><strong>Phone:</strong> {selectedBooking.phone}</p>
-              <p><strong>Check-in Date:</strong> {selectedBooking.check_in_date || selectedBooking.date}</p>
-              <p><strong>Check-out Date:</strong> {selectedBooking.check_out_date || 'N/A'}</p>
-              <p><strong>Room Type:</strong> {selectedBooking.room_type || 'N/A'}</p>
-              <p><strong>Number of Guests:</strong> {selectedBooking.guests || 'N/A'}</p>
-              <p><strong>Amount:</strong> ₹{selectedBooking.amount}</p>
-              <p><strong>Status:</strong> <span className={`status-badge ${(selectedBooking.status || '').toLowerCase()}`}>{selectedBooking.status}</span></p>
-              {selectedBooking.special_requests && (
-                <p><strong>Special Requests:</strong> {selectedBooking.special_requests}</p>
-              )}
-            </div>
-
-            <div className="status-buttons">
-              <button 
-                className="btn-action btn-view"
-                onClick={() => handleStatusChange(selectedBooking.id, 'Confirmed')}
-              >
-                Confirm
-              </button>
-              <button 
-                className="btn-action btn-edit"
-                onClick={() => handleStatusChange(selectedBooking.id, 'Completed')}
-              >
-                Complete
-              </button>
-              <button 
-                className="btn-action btn-delete"
-                onClick={() => handleStatusChange(selectedBooking.id, 'Cancelled')}
-              >
-                Cancel
-              </button>
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn-action" onClick={() => setShowBookingModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Receipt Modal */}
-      {showReceipt && selectedBooking && (
-        <Receipt booking={selectedBooking} onClose={() => setShowReceipt(false)} />
+        <RoomFormModal title="Edit Room" formData={formData}
+          onChange={handleChange} onSubmit={handleSubmitEdit}
+          onClose={() => setShowEditModal(false)} />
       )}
     </div>
   );

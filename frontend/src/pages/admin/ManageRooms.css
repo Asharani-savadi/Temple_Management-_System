@@ -1,0 +1,499 @@
+/* ── Room card grid ─────────────────────────────────────────── */
+.rooms-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.rooms-loading,
+.rooms-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #888;
+  font-size: 1rem;
+}
+
+.rooms-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+
+.room-card {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+}
+
+/* Thumbnail */
+.room-card-thumb {
+  position: relative;
+  height: 190px;
+  background: #f0f0f0;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.room-card-thumb > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.room-card-thumb:hover > img { transform: scale(1.04); }
+
+.room-card-no-photo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.room-card-no-photo span { font-size: 2.5rem; }
+
+.room-card-thumb-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.55));
+  color: white;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.room-card-thumb:hover .room-card-thumb-overlay { opacity: 1; }
+
+/* Thumbnail strip */
+.room-thumb-strip {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  height: 44px;
+  background: rgba(0,0,0,0.4);
+}
+
+.thumb-strip-img {
+  flex: 1;
+  object-fit: cover;
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+.thumb-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.6rem;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+
+/* Card body */
+.room-card-body { padding: 1.1rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.room-card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.room-card-title-row h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #222;
+  flex: 1;
+}
+
+.room-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #dc143c;
+  white-space: nowrap;
+}
+
+.room-price small { font-size: 0.72rem; font-weight: 400; color: #888; }
+
+.room-type-label { font-size: 0.82rem; color: #666; margin: 0; }
+
+/* Availability bar */
+.room-availability {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.avail-bar {
+  flex: 1;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.avail-fill {
+  height: 100%;
+  background: #4CAF50;
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+/* Tags */
+.room-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.tag {
+  background: #f3f3f3;
+  color: #555;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.tag-ac { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+.tag-lift { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
+
+/* Card action buttons */
+.room-card-actions { display: flex; gap: 0.4rem; margin-top: auto; padding-top: 0.4rem; }
+
+.room-btn {
+  flex: 1;
+  padding: 0.45rem 0.3rem;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.room-btn-gallery { background: #e3f2fd; color: #1565c0; }
+.room-btn-gallery:hover { background: #1565c0; color: white; }
+
+.room-btn-edit { background: #fff3e0; color: #e65100; }
+.room-btn-edit:hover { background: #e65100; color: white; }
+
+.room-btn-delete { background: #fce4ec; color: #c62828; }
+.room-btn-delete:hover { background: #c62828; color: white; }
+
+/* ── Photo Gallery Modal ─────────────────────────────────────── */
+.photo-gallery-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90vw;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.gallery-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.2rem;
+}
+
+.gallery-modal-header h2 { margin: 0; font-size: 1.3rem; color: #222; }
+.gallery-subtitle { margin: 0.2rem 0 0; font-size: 0.85rem; color: #888; }
+
+.gallery-close-btn {
+  background: #f5f5f5;
+  border: none;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.gallery-close-btn:hover { background: #dc143c; color: white; }
+
+/* Upload bar */
+.gallery-upload-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: #fafafa;
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.gallery-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #dc143c;
+  color: white;
+  padding: 0.55rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.gallery-upload-btn:hover { background: #b01030; }
+.gallery-upload-btn.uploading { background: #888; cursor: not-allowed; }
+
+.gallery-upload-hint { font-size: 0.8rem; color: #999; }
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty state */
+.gallery-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #aaa;
+}
+
+.gallery-empty-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.gallery-empty-sub { font-size: 0.85rem; margin-top: 0.3rem; }
+
+/* Photo grid */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.gallery-item {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #e8e8e8;
+  background: #f5f5f5;
+  transition: border-color 0.2s;
+}
+
+.gallery-item.is-primary { border-color: #dc143c; }
+
+.gallery-img-wrap {
+  position: relative;
+  height: 130px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.gallery-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.gallery-img-wrap:hover img { transform: scale(1.06); }
+
+.gallery-primary-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  background: #dc143c;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 8px;
+}
+
+.gallery-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.gallery-img-wrap:hover .gallery-img-overlay { opacity: 1; }
+
+.gallery-item-actions {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  background: white;
+}
+
+.gal-btn {
+  flex: 1;
+  border: none;
+  border-radius: 5px;
+  padding: 0.3rem 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gal-btn-star { background: #fff8e1; color: #f57f17; }
+.gal-btn-star:hover { background: #f57f17; color: white; }
+
+.gal-btn-del { background: #fce4ec; color: #c62828; }
+.gal-btn-del:hover { background: #c62828; color: white; }
+
+/* ── Lightbox ────────────────────────────────────────────────── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+.lightbox-prev,
+.lightbox-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  font-size: 2.5rem;
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.lightbox-prev { left: 1.5rem; }
+.lightbox-next { right: 1.5rem; }
+.lightbox-prev:hover, .lightbox-next:hover { background: rgba(255,255,255,0.3); }
+
+.lightbox-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lightbox-close:hover { background: #dc143c; }
+
+.lightbox-counter {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  background: rgba(0,0,0,0.4);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* ── Form improvements ───────────────────────────────────────── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid #ddd;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #dc143c;
+}
+
+.form-checkboxes {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.4rem 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.checkbox-label input { width: 16px; height: 16px; cursor: pointer; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .rooms-card-grid { grid-template-columns: 1fr; }
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .photo-gallery-modal { padding: 1rem; }
+  .lightbox-prev { left: 0.5rem; }
+  .lightbox-next { right: 0.5rem; }
+}
