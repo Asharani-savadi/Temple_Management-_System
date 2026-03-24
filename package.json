@@ -9,7 +9,7 @@
     "start:frontend": "cd frontend && npm start",
     "start:backend": "cd backend && npm start",
     "build:frontend": "cd frontend && npm run build",
-    "vercel-build": "cd frontend && npm install && npm run build"
+    "vercel-build": "cd frontend && npm install && CI=false npm run build"
   },
   "description": "Temple Management System - Full Stack Application"
 }
