@@ -477,23 +477,28 @@
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
-  border-radius: 18px 18px 0 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 2.5s infinite;
   pointer-events: none;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  60%, 100% { left: 150%; }
 }
 
 .service-btn::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  height: 30%;
-  background: linear-gradient(0deg, rgba(0,0,0,0.2) 0%, transparent 100%);
-  border-radius: 0 0 18px 18px;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  border-radius: 18px 18px 0 0;
   pointer-events: none;
 }
 
@@ -514,12 +519,18 @@
 .service-btn:nth-child(6),
 .service-btn:nth-child(7) {
   background: linear-gradient(145deg, #e07850 0%, #c86540 100%);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3), 
+              0 5px 12px rgba(0,0,0,0.2),
+              inset 0 -4px 10px rgba(0,0,0,0.25);
 }
 
 .service-btn:nth-child(3):hover,
 .service-btn:nth-child(6):hover,
 .service-btn:nth-child(7):hover {
   background: linear-gradient(145deg, #f08860 0%, #d87550 100%);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4), 
+              0 8px 18px rgba(0,0,0,0.25),
+              inset 0 -4px 10px rgba(0,0,0,0.25);
 }
 
 .service-btn .icon {
@@ -568,23 +579,23 @@
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
-  border-radius: 18px 18px 0 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 2.8s infinite;
   pointer-events: none;
 }
 
 .project-btn::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  height: 30%;
-  background: linear-gradient(0deg, rgba(0,0,0,0.2) 0%, transparent 100%);
-  border-radius: 0 0 18px 18px;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  border-radius: 18px 18px 0 0;
   pointer-events: none;
 }
 
@@ -595,10 +606,16 @@
 
 .project-btn:nth-child(2) {
   background: linear-gradient(145deg, #7fa03c 0%, #6a8530 100%);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3), 
+              0 5px 12px rgba(0,0,0,0.2),
+              inset 0 -4px 10px rgba(0,0,0,0.25);
 }
 
 .project-btn:nth-child(3) {
   background: linear-gradient(145deg, #8fb84d 0%, #7a9d40 100%);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3), 
+              0 5px 12px rgba(0,0,0,0.2),
+              inset 0 -4px 10px rgba(0,0,0,0.25);
 }
 
 .project-btn:hover {
@@ -606,6 +623,7 @@
   box-shadow: 0 15px 35px rgba(0,0,0,0.4), 
               0 8px 18px rgba(0,0,0,0.25),
               inset 0 -4px 10px rgba(0,0,0,0.25);
+  filter: brightness(1.1);
 }
 
 .project-btn:active {
@@ -630,7 +648,7 @@
 }
 
 .audio-btn {
-  background: linear-gradient(145deg, #c85a28 0%, #a0441f 100%);
+  background: linear-gradient(145deg, #ff6a00 0%, #ee0979 100%);
   color: rgba(255, 255, 255, 0.98);
   padding: 3rem 2rem;
   border: none;
@@ -639,9 +657,9 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3), 
-              0 5px 12px rgba(0,0,0,0.2),
-              inset 0 -4px 10px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 25px rgba(255, 106, 0, 0.4), 
+              0 5px 12px rgba(238, 9, 121, 0.3),
+              inset 0 -4px 10px rgba(0,0,0,0.2);
   letter-spacing: 1.5px;
   position: relative;
   overflow: hidden;
@@ -661,6 +679,18 @@
   content: '';
   position: absolute;
   top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 3s infinite;
+  pointer-events: none;
+}
+
+.audio-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
   left: 0;
   right: 0;
   height: 45%;
@@ -669,24 +699,12 @@
   pointer-events: none;
 }
 
-.audio-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 30%;
-  background: linear-gradient(0deg, rgba(0,0,0,0.2) 0%, transparent 100%);
-  border-radius: 0 0 18px 18px;
-  pointer-events: none;
-}
-
 .audio-btn:hover {
   transform: translateY(-6px) scale(1.03);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.4), 
-              0 8px 18px rgba(0,0,0,0.25),
-              inset 0 -4px 10px rgba(0,0,0,0.25);
-  background: linear-gradient(145deg, #d66830 0%, #b04d24 100%);
+  box-shadow: 0 15px 35px rgba(255, 106, 0, 0.5), 
+              0 8px 18px rgba(238, 9, 121, 0.4),
+              inset 0 -4px 10px rgba(0,0,0,0.2);
+  filter: brightness(1.1);
 }
 
 .audio-btn:active {
